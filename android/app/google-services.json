@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "558455103518",
+    "project_id": "strakata-turistika",
+    "storage_bucket": "strakata-turistika.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558455103518:android:509f150b04a7d5b15bce0f",
+        "android_client_info": {
+          "package_name": "cz.strakata.turistika.strakataturistikaandroidapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnX2OXaLphDkGqoLDQIu7Odj76GpXUDOs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

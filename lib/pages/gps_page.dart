@@ -1,0 +1,1831 @@
+import 'dart:async';
+import 'dart:ui' as ui;
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
+import 'package:strakataturistikaandroidapp/services/vector_tile_provider.dart';
+import 'package:strakataturistikaandroidapp/services/mapy_cz_download_service.dart';
+import 'package:strakataturistikaandroidapp/services/tracking_state_service.dart';
+import 'package:strakataturistikaandroidapp/services/haptic_service.dart';
+import 'package:strakataturistikaandroidapp/services/logging_service.dart';
+
+import 'package:strakataturistikaandroidapp/models/visit_data.dart';
+import 'package:strakataturistikaandroidapp/models/tracking_summary.dart';
+import 'package:strakataturistikaandroidapp/utils/gps_utils.dart';
+
+import 'package:strakataturistikaandroidapp/animations/gps_animations.dart';
+import 'package:strakataturistikaandroidapp/services/gps_services.dart';
+import 'package:strakataturistikaandroidapp/services/scoring_config_service.dart';
+import 'package:strakataturistikaandroidapp/services/error_recovery_service.dart';
+import 'package:strakataturistikaandroidapp/pages/visit_data_form_page.dart';
+
+import 'package:strakataturistikaandroidapp/config/app_colors.dart';
+import 'package:strakataturistikaandroidapp/widgets/ui/glass_ui.dart';
+import 'package:strakataturistikaandroidapp/widgets/gps/tracking_bottom_sheet.dart';
+
+class GpsPage extends StatefulWidget {
+  const GpsPage({super.key});
+
+  @override
+  State<GpsPage> createState() => _GpsPageState();
+}
+
+class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
+  final MapController _mapController = MapController();
+  final TrackingStateService _trackingStateService = TrackingStateService();
+  final HapticService _hapticService = HapticService();
+  final LoggingService _loggingService = LoggingService();
+  
+  // Animation controllers
+  late AnimationController _pulseController;
+  late AnimationController _slideController;
+  late AnimationController _speedPulseController;
+  late AnimationController _fadeController;
+  late AnimationController _bounceController;
+  late AnimationController _panelSlideController;
+  late AnimationController _scaleController;
+  
+  // Animations
+  late Animation<double> _pulseAnimation;
+  late Animation<Offset> _panelSlideAnimation;
+  
+  // State variables
+  LatLng? _currentLocation;
+  double? _currentSpeed;
+  double? _currentAltitude;
+  double? _currentHeading;
+  // Speed smoothing
+  final List<double> _recentSpeeds = <double>[]; // m/s
+  static const int _recentSpeedsWindow = 8;
+  static const double _stationaryThresholdMs = 0.6; // ~2.2 km/h
+
+  bool _isMapReady = false;
+  bool _hasInitiallyCentered = false;
+  bool _isMapLoading = true;
+  Timer? _updateTimer;
+  Timer? _networkTimer;
+  bool _isOnline = true;
+  // Smart prefetch debounce
+  Timer? _prefetchDebounce;
+  
+  // Offline manager state (flag removed; manager opens via sheet when invoked)
+  // Offline download UI state
+  bool _isDownloadingTiles = false;
+  double _downloadProgress = 0.0;
+  String _downloadStatus = '';
+  StreamSubscription<Map<String, dynamic>>? _dlProgressSub;
+  StreamSubscription<bool>? _dlStateSub;
+  
+  // Cache coverage state
+  double _cacheCoverage = 0.0;
+  bool _isCheckingCoverage = false;
+  Timer? _coverageDebounce;
+
+  
+
+  
+  // Compass/heading state
+
+
+
+  
+  // Map centering state
+  bool _showRecenterButton = false;
+  final LatLng _userPosition = const LatLng(49.8175, 15.4730); // Default to Czech Republic center
+  double _currentZoom = 8.0;
+  
+  // Map state persistence
+  static LatLng? _lastMapCenter;
+  static double? _lastMapZoom;
+  
+  // Tracking pause state
+  bool _isPaused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    _startUpdateTimer();
+    _startNetworkMonitor();
+    // Ensure tracking service is initialized so native location events are received
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await GpsServices.initializeEnhancedGPSTracking(_trackingStateService);
+        await VectorTileProvider.initialize();
+      } catch (_) {}
+    });
+    // Listen to offline download streams
+    _dlStateSub = MapyCzDownloadService.downloadStateStream.listen((active) {
+      if (mounted) {
+        setState(() {
+          _isDownloadingTiles = active;
+        });
+      }
+    });
+    _dlProgressSub = MapyCzDownloadService.progressStream.listen((m) {
+      if (mounted) {
+        setState(() {
+          _downloadProgress = (m['progress'] as double?) ?? 0.0;
+          _downloadStatus = (m['status'] as String?) ?? '';
+        });
+      }
+    });
+    
+    // Explicitly fetch current location for passive map centering
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+            timeLimit: const Duration(seconds: 3));
+        if (mounted && pos != null) {
+          setState(() {
+            _currentLocation = LatLng(pos.latitude, pos.longitude);
+            if (!_hasInitiallyCentered && _isMapReady) {
+              _mapController.move(_currentLocation!, 15.0);
+              _hasInitiallyCentered = true;
+            }
+          });
+        }
+      } catch (_) {}
+    });
+  }
+  
+  void _initializeAnimations() {
+    _pulseController = GpsAnimations.createPulseController(this);
+    _slideController = GpsAnimations.createSlideController(this);
+    _speedPulseController = GpsAnimations.createSpeedPulseController(this);
+    _fadeController = GpsAnimations.createFadeController(this);
+    _bounceController = GpsAnimations.createBounceController(this);
+    _scaleController = GpsAnimations.createScaleController(this);
+    _panelSlideController = GpsAnimations.createPanelSlideController(this);
+    
+    _pulseAnimation = GpsAnimations.createPulseAnimation(_pulseController);
+    _panelSlideAnimation = GpsAnimations.createPanelSlideAnimation(_panelSlideController);
+    
+    GpsAnimations.initializeAnimations(
+      pulseController: _pulseController,
+      slideController: _slideController,
+      fadeController: _fadeController,
+      panelSlideController: _panelSlideController,
+    );
+  }
+  
+
+  
+
+
+
+  
+  void _startUpdateTimer() {
+    _updateTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
+      if (mounted) {
+        setState(() {
+          // Update current location from tracking service
+          final summary = _trackingStateService.getSummary();
+          if (_trackingStateService.isTracking && summary.trackPoints.isNotEmpty) {
+            final lastPoint = summary.trackPoints.last;
+            _currentLocation = lastPoint.toLatLng();
+            // Speed smoothing & stationary detection
+            final s = lastPoint.speed;
+            _recentSpeeds.add(s);
+            if (_recentSpeeds.length > _recentSpeedsWindow) {
+              _recentSpeeds.removeAt(0);
+            }
+            final avg = _recentSpeeds.isEmpty
+                ? s
+                : _recentSpeeds.reduce((a, b) => a + b) / _recentSpeeds.length;
+            final isStationary = avg < _stationaryThresholdMs;
+            _currentSpeed = isStationary ? 0.0 : avg;
+            // Animate speed pulse only when moving
+            if (isStationary) {
+              if (_speedPulseController.isAnimating) {
+                _speedPulseController.stop();
+              }
+            } else {
+              if (!_speedPulseController.isAnimating) {
+                _speedPulseController.repeat(reverse: true);
+              }
+            }
+            _currentAltitude = lastPoint.altitude;
+            _currentHeading = lastPoint.heading;
+            // Center on first valid fix once the map is ready
+            if (!_hasInitiallyCentered && _currentLocation != null && _isMapReady) {
+              _smoothMoveToLocation(_currentLocation!);
+              _hasInitiallyCentered = true;
+            }
+          } else {
+            // Not tracking: clear transient indicators
+            _recentSpeeds.clear();
+            _currentSpeed = null;
+            _currentHeading = null;
+            _currentAltitude = null;
+            if (_speedPulseController.isAnimating) {
+              _speedPulseController.stop();
+            }
+          }
+        });
+      }
+    });
+  }
+  
+  void _smoothMoveToLocation(LatLng location) {
+    // Smooth map movement with easing
+    _mapController.move(location, 16.0);
+  }
+  
+  void _startNetworkMonitor() {
+    // Initial check
+    ErrorRecoveryService().isNetworkAvailable().then((available) {
+      if (mounted) {
+        _updateOnlineState(available);
+      }
+    });
+    _networkTimer?.cancel();
+    _networkTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      final available = await ErrorRecoveryService().isNetworkAvailable();
+      if (mounted) {
+        _updateOnlineState(available);
+      }
+    });
+  }
+
+  void _updateOnlineState(bool online) {
+    if (_isOnline == online) return;
+    setState(() {
+      _isOnline = online;
+    });
+    
+    // When coming back online, refresh tiles with smooth transition
+    if (online && _isMapReady) {
+      _refreshTilesOnOnline();
+    }
+  }
+
+  void _refreshTilesOnOnline() {
+    if (!_isMapReady) return;
+    
+      final cam = _mapController.camera;
+    final center = cam.center;
+    final zoom = cam.zoom;
+    
+    // Small movement to trigger tile refresh without jarring user
+    final offset = 0.0001; // Very small offset
+    final newCenter = LatLng(
+      center.latitude + offset,
+      center.longitude + offset,
+    );
+    
+    // Smooth transition to refresh tiles
+    _mapController.move(newCenter, zoom);
+    
+    // After a brief moment, move back to original position
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_isMapReady) {
+        _mapController.move(center, zoom);
+      }
+    });
+  }
+
+  void _updateCacheCoverage() {
+    // Debounce coverage checks to avoid excessive calls
+    _coverageDebounce?.cancel();
+    _coverageDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _performCacheCoverageCheck();
+    });
+  }
+
+  Future<void> _performCacheCoverageCheck() async {
+    if (!_isMapReady || _isCheckingCoverage) return;
+    
+    setState(() {
+      _isCheckingCoverage = true;
+    });
+    
+    try {
+      final cam = _mapController.camera;
+      final center = cam.center;
+      final zoom = cam.zoom.floor().clamp(8, 16);
+      
+      // Check coverage for a small area around current view
+      final latDelta = 0.02; // ~2km radius
+      final lngDelta = 0.03;
+      final sw = LatLng(center.latitude - latDelta, center.longitude - lngDelta);
+      final ne = LatLng(center.latitude + latDelta, center.longitude + lngDelta);
+      
+      final coverage = await VectorTileProvider.estimateCoverage(
+        southwest: sw,
+        northeast: ne,
+        zoom: zoom,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _cacheCoverage = coverage;
+          _isCheckingCoverage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _cacheCoverage = 0.0;
+          _isCheckingCoverage = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    _networkTimer?.cancel();
+    _prefetchDebounce?.cancel();
+    _coverageDebounce?.cancel();
+    _dlProgressSub?.cancel();
+    _dlStateSub?.cancel();
+
+
+
+    GpsAnimations.disposeAnimations(
+      pulseController: _pulseController,
+      slideController: _slideController,
+      speedPulseController: _speedPulseController,
+      fadeController: _fadeController,
+      bounceController: _bounceController,
+      scaleController: _scaleController,
+    );
+    super.dispose();
+  }
+  
+  Future<void> _startTracking() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Spustit sledování'),
+          content: const Text('Opravdu chcete spustit GPS sledování?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Zrušit'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF4CAF50),
+              ),
+              child: const Text('Spustit'),
+            ),
+          ],
+        );
+      },
+    );
+    
+    if (confirmed == true) {
+      // Check if GPS is enabled first
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Show GPS settings dialog
+        final openSettings = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.location_off, color: Colors.red, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('GPS je vypnuto')),
+                ],
+              ),
+              content: const Text(
+                'Pro trackování trasy musíte zapnout GPS služby na vašem zařízení.\n\n'
+                'Klikněte na "Zapnout GPS" a v nastavení aktivujte polohu.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Zrušit'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  icon: const Icon(Icons.location_on),
+                  label: const Text('Zapnout GPS'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+        
+        if (openSettings == true) {
+          // Open location settings
+          await Geolocator.openLocationSettings();
+        }
+        return; // Don't start tracking if GPS is off
+      }
+      
+      // GPS is enabled, proceed with tracking
+      
+      // Show Pre-Permission Dialog to guide user about "Always Allow"
+      final prePermissionGranted = await GpsServices.showPrePermissionDialog(context);
+      if (!prePermissionGranted) {
+        return; // User cancelled
+      }
+      
+      await GpsServices.startTracking(
+        trackingStateService: _trackingStateService,
+        context: context,
+        onSuccess: () => _pulseController.repeat(reverse: true),
+      );
+    }
+  }
+  
+  Future<void> _stopTracking() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Zastavit sledování'),
+          content: const Text('Opravdu chcete zastavit GPS sledování?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Zrušit'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Zastavit'),
+            ),
+          ],
+        );
+      },
+    );
+    
+    if (confirmed == true) {
+      await GpsServices.stopTracking(
+        trackingStateService: _trackingStateService,
+        context: context,
+        onSuccess: () {
+          _pulseController.stop();
+          HapticService.mediumImpact();
+          // Clear UI indicators on stop
+          setState(() {
+            _recentSpeeds.clear();
+            _currentSpeed = null;
+            _currentHeading = null;
+            _currentAltitude = null;
+            _hasInitiallyCentered = false;
+          });
+          if (_speedPulseController.isAnimating) {
+            _speedPulseController.stop();
+          }
+        },
+        showTrackingSummary: _showTrackingSummary,
+      );
+    }
+  }
+  
+  void _toggleTracking() {
+    HapticService.selectionClick();
+    if (_trackingStateService.isTracking) {
+      if (_isPaused) {
+        _resumeTracking();
+      } else {
+        _pauseTracking();
+      }
+    } else {
+      _startTracking();
+    }
+  }
+
+  void _pauseTracking() {
+    setState(() {
+      _isPaused = true;
+    });
+    _pulseController.stop();
+    HapticService.mediumImpact();
+  }
+  
+  void _resumeTracking() {
+    setState(() {
+      _isPaused = false;
+    });
+    _pulseController.repeat(reverse: true);
+    HapticService.selectionClick();
+  }
+
+  void _showSimulateSheet() async {
+    final cfg = await ScoringConfigService().getConfig();
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final presets = [
+          _SimPreset('Krátká procházka', 1.5, Icons.directions_walk),
+          _SimPreset('Základní (min. vzdálenost)', cfg.minDistanceKm, Icons.flag_circle),
+          _SimPreset('Delší trasa', 5.0, Icons.terrain),
+          _SimPreset('Dlouhá trasa', 10.0, Icons.hiking),
+          _SimPreset('Městská křivkovaná', 4.0, Icons.route, useSmart: true),
+        ];
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (_, controller) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text('Simulovat trasu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Vyberte jednu z předvyplněných tras. Body za vzdálenost se počítají podle aktuálního bodování. Body za místa (vrchol/rozhledna/strom) přidáte v detailu návštěvy po ukončení.',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.separated(
+                    controller: controller,
+                    itemCount: presets.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final p = presets[i];
+                      final distancePoints = (p.km >= cfg.minDistanceKm) ? (p.km * cfg.pointsPerKm) : 0.0;
+                      return InkWell(
+                        onTap: () async {
+                          Navigator.of(ctx).pop();
+                          await _simulatePreset(p);
+                        },
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(p.icon, color: const Color(0xFF4CAF50)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(p.label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        _chip('${p.km.toStringAsFixed(1)} km'),
+                                        const SizedBox(width: 6),
+                                        _chip('Body za vzd.: ${distancePoints.toStringAsFixed(1)}'),
+                                        if (p.useSmart) ...[
+                                          const SizedBox(width: 6),
+                                          _chip('Křivkovaná trasa'),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.play_arrow, color: Color(0xFF4CAF50)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showToolsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.4,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
+        builder: (_, controller) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Nástroje', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.play_circle_outline, color: Color(0xFF4CAF50)),
+                      title: const Text('Simulovat trasu'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showSimulateSheet();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.assessment_outlined, color: Color(0xFF4CAF50)),
+                      title: const Text('Shrnutí trasy'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showTrackingSummary(_trackingStateService.getSummary());
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFF374151), fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Future<void> _simulatePreset(_SimPreset preset) async {
+    // Ensure tracking is started
+    if (!_trackingStateService.isTracking) {
+      await _startTracking();
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+    HapticService.mediumImpact();
+
+    final start = _currentLocation ?? const LatLng(50.0755, 14.4378);
+    final points = preset.useSmart
+        ? GpsUtils.generateSmartRoute()
+        : _generateLoopRoute(start, preset.km);
+
+    // Feed points instantly with small time deltas to avoid huge distances
+    DateTime t = DateTime.now();
+    for (int i = 0; i < points.length; i++) {
+      final p = points[i];
+      t = t.add(const Duration(seconds: 2));
+      final position = Position(
+        latitude: p.latitude,
+        longitude: p.longitude,
+        timestamp: t,
+        accuracy: 6.0,
+        altitude: 200.0,
+        altitudeAccuracy: 5.0,
+        heading: 90.0,
+        headingAccuracy: 5.0,
+        speed: 2.0,
+        speedAccuracy: 1.0,
+      );
+      _trackingStateService.forceAddPosition(position);
+    }
+
+    // Removed simulation completion toast per request
+  }
+
+  List<LatLng> _generateLoopRoute(LatLng start, double targetKm) {
+    final List<LatLng> pts = [];
+    final totalMeters = (targetKm * 1000).clamp(200, 50000).toDouble();
+    const stepMeters = 30.0; // ~30m between points for smoothness
+    final steps = (totalMeters / stepMeters).round();
+    final latRad = start.latitude * (pi / 180);
+    final dLatPerM = 1 / 111320.0;
+    final dLngPerM = 1 / (111320.0 * cos(latRad));
+    // Create a rectangular loop path (2:1 aspect)
+    final perSide = steps ~/ 4;
+    LatLng cur = start;
+    // East
+    for (int i = 0; i < perSide; i++) {
+      cur = LatLng(cur.latitude, cur.longitude + stepMeters * dLngPerM);
+      pts.add(cur);
+    }
+    // North
+    for (int i = 0; i < perSide; i++) {
+      cur = LatLng(cur.latitude + stepMeters * dLatPerM, cur.longitude);
+      pts.add(cur);
+    }
+    // West
+    for (int i = 0; i < perSide; i++) {
+      cur = LatLng(cur.latitude, cur.longitude - stepMeters * dLngPerM);
+      pts.add(cur);
+    }
+    // South
+    for (int i = 0; i < perSide; i++) {
+      cur = LatLng(cur.latitude - stepMeters * dLatPerM, cur.longitude);
+      pts.add(cur);
+    }
+    // If leftover steps due to rounding, continue east
+    final leftover = steps - (perSide * 4);
+    for (int i = 0; i < leftover; i++) {
+      cur = LatLng(cur.latitude, cur.longitude + stepMeters * dLngPerM);
+      pts.add(cur);
+    }
+    return pts;
+  }
+  
+  void _showTrackingSummary(TrackingSummary summary, [String? draftId]) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildSummarySheet(summary, draftId),
+    );
+  }
+
+  Widget _buildSummarySheet(TrackingSummary summary, String? draftId) {
+    final duration = summary.duration;
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+    final distanceKm = summary.totalDistance / 1000;
+    final avgSpeedKmh = summary.averageSpeed * 3.6;
+    final maxSpeedKmh = summary.maxSpeed * 3.6;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (draftId != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.check_circle, color: AppColors.secondary),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Trasa byla uložena jako návrh. Můžete doplnit informace později.',
+                        style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (draftId != null) const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: const Text(
+              'Shrnutí trasy',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.5,
+                children: [
+                  _buildStatCard('Doba', '${hours}h ${minutes}m ${seconds}s', Icons.timer_outlined),
+                  _buildStatCard('Vzdálenost', '${distanceKm.toStringAsFixed(2)} km', Icons.straighten),
+                  _buildStatCard('Průměrná rychlost', '${avgSpeedKmh.toStringAsFixed(1)} km/h', Icons.speed),
+                  _buildStatCard('Max rychlost', '${maxSpeedKmh.toStringAsFixed(1)} km/h', Icons.trending_up),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: AppColors.border, width: 1.2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Doplnit později', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => VisitDataFormPage(trackingSummary: summary),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.textPrimary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Doplnit a odeslat', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: AppColors.textPrimary, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // follow-location toggle removed; we now only recenter on first fix or via the recenter pill
+  
+  void _centerOnLocation() {
+    if (_currentLocation != null) {
+      // Smooth map movement with animation
+      _mapController.move(_currentLocation!, 16.0);
+      _bounceController.forward().then((_) => _bounceController.reverse());
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.center_focus_strong, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '📍 Vycentrováno na vaši polohu',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF2E7D32),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(12),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+  
+
+  
+  void _showStorageInfo() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+            ],
+          ),
+        );
+      },
+    );
+  }
+  
+  void _recenterMap() {
+    if (_currentLocation != null) {
+      _mapController.move(_currentLocation!, _mapController.camera.zoom);
+      setState(() {
+        _showRecenterButton = false;
+      });
+    }
+  }
+  
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    return GpsUtils.calculateDistance(point1, point2);
+  }
+
+  // Floating action helper
+  Widget _floatingAction({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return GlassCard(
+      borderRadius: 16,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Large floating action for start/stop button
+  Widget _largeFloatingAction({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return GlassCard(
+      borderRadius: 20,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              color: color, 
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Mark point flow
+  void _showMarkPointSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => _MarkPointEditor(
+          controller: controller,
+          onSaved: (place) {
+            // Integrate with summary/form via visit form page
+            final summary = _trackingStateService.getSummary();
+            Navigator.of(ctx).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => VisitDataFormPage(
+                  trackingSummary: summary,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<bool>(
+      stream: _trackingStateService.trackingStateStream,
+      builder: (context, snapshot) {
+        final isTracking = snapshot.data ?? false;
+        if (snapshot.hasData) {
+          if (snapshot.data == true) {
+            _pulseController.repeat(reverse: true);
+            _panelSlideController.forward();
+          } else {
+            _pulseController.stop();
+            _panelSlideController.reverse();
+          }
+        }
+        
+        return Scaffold(
+          extendBodyBehindAppBar: true,
+          body: Stack(
+            children: [
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _lastMapCenter ?? const LatLng(49.8175, 15.4730),
+                  initialZoom: _lastMapZoom ?? 8.0,
+                  minZoom: 6.0,
+                  maxZoom: 18.0,
+                  onMapReady: () {
+                    _isMapReady = true;
+                    _isMapLoading = false;
+                    _currentZoom = _mapController.camera.zoom;
+                    if (_currentLocation != null && !_hasInitiallyCentered) {
+                      _smoothMoveToLocation(_currentLocation!);
+                      _hasInitiallyCentered = true;
+                    }
+                    _updateCacheCoverage();
+                  },
+                  onPositionChanged: (MapPosition position, bool hasGesture) {
+                    final newZoom = position.zoom ?? _mapController.camera.zoom;
+                    if (newZoom != _currentZoom) {
+                       _currentZoom = newZoom;
+                    }
+                    if (hasGesture) {
+                      setState(() {
+                        _showRecenterButton = true;
+                      });
+                    }
+                    // Save map state
+                    _lastMapCenter = position.center;
+                    _lastMapZoom = position.zoom;
+                  },
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                ),
+                children: [
+                  TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'cz.strakata.turistika.strakataturistikaandroidapp',
+                  ),
+                  if (_currentLocation != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _currentLocation!,
+                          width: 60,
+                          height: 60,
+                          child: GestureDetector(
+                            onTap: () {
+                              _pulseController.forward(from: 0.0);
+                              HapticService.selectionClick();
+                            },
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Show pulse if tracking OR if we want to show 'alive' state
+                                if (_trackingStateService.isTracking)
+                                  ScaleTransition(
+                                    scale: _pulseAnimation,
+                                    child: Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withOpacity(0.3),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                if (_currentHeading != null)
+                                  Transform.rotate(
+                                    angle: (_currentHeading! * (3.14159 / 180)),
+                                    child: CustomPaint(
+                                      size: const Size(100, 100),
+                                      painter: DirectionalConePainter(),
+                                    ),
+                                  ),
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (_trackingStateService.isTracking && _trackingStateService.getSummary().trackPoints.isNotEmpty)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: _trackingStateService.getSummary().trackPoints
+                              .map((p) => p.toLatLng())
+                              .toList(),
+                          strokeWidth: 5,
+                          color: AppColors.primary,
+                          borderStrokeWidth: 2,
+                          borderColor: Colors.white.withOpacity(0.8),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              
+              // 2. Map Controls & Manual Upload - Positioned above sheet
+              Positioned(
+                bottom: MediaQuery.of(context).size.height * 0.22, // Above collapsed sheet
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingActionButton(
+                      heroTag: 'manual_entry',
+                      mini: true,
+                      backgroundColor: Colors.white,
+                      child: const Icon(Icons.edit_note, color: Colors.black87),
+                      onPressed: () {
+                         final defaultSummary = TrackingSummary(
+                          isTracking: false,
+                          startTime: DateTime.now(),
+                          duration: const Duration(minutes: 0),
+                          totalDistance: 0.0,
+                          averageSpeed: 0.0,
+                          maxSpeed: 0.0,
+                          totalElevationGain: 0.0,
+                          totalElevationLoss: 0.0,
+                          minAltitude: null,
+                          maxAltitude: null,
+                          trackPoints: [],
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VisitDataFormPage(trackingSummary: defaultSummary),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (_showRecenterButton)
+                      FloatingActionButton(
+                        heroTag: 'recenter',
+                        mini: true,
+                        backgroundColor: Colors.white,
+                        child: const Icon(Icons.my_location, color: Colors.black87),
+                        onPressed: _centerOnLocation,
+                      ),
+                  ],
+                ),
+              ),
+
+              // 3. Top Gradient for Status Bar visibility
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 100,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withOpacity(0.9),
+                        Colors.white.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              // 4. Offline/Download Indicators (Top Left)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                left: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     if (!_isOnline)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.red[200]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.wifi_off, size: 16, color: Colors.red[700]),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Offline',
+                              style: TextStyle(
+                                color: Colors.red[700],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // 5. Draggable Sheet
+              DraggableScrollableSheet(
+                initialChildSize: 0.18,
+                minChildSize: 0.18,
+                maxChildSize: 0.85,
+                snap: true,
+                snapSizes: const [0.18, 0.85], // Simplified snap points for smoother feel
+                builder: (context, scrollController) {
+                  return TrackingBottomSheet(
+                    scrollController: scrollController,
+                    summary: _trackingStateService.getSummary(),
+                    currentSpeed: _currentSpeed,
+                    currentAltitude: _currentAltitude,
+                    isTracking: isTracking,
+                    isPaused: _isPaused, 
+                    onToggleTracking: _toggleTracking,
+                    onPauseTracking: _pauseTracking,
+                    onStopTracking: _stopTracking,
+                    onCenterMap: _centerOnLocation,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildGlassyIconButton({required IconData icon, required VoidCallback onTap, Color color = const Color(0xFF4CAF50)}) {
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        borderRadius: 16,
+        onTap: onTap,
+        child: Center(
+          child: Icon(icon, color: color),
+        ),
+      ),
+    );
+  }
+  void _showUnifiedTools() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Nástroje a offline mapy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.play_circle_outline, color: Color(0xFF4CAF50)),
+                      title: const Text('Simulovat trasu'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showSimulateSheet();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.assessment_outlined, color: Color(0xFF4CAF50)),
+                      title: const Text('Shrnutí trasy'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showTrackingSummary(_trackingStateService.getSummary());
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.download_for_offline_outlined, color: Color(0xFF4CAF50)),
+                      title: const Text('Stáhnout aktuální zobrazení'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showOfflineManager();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.storage_rounded, color: Color(0xFF4CAF50)),
+                      title: const Text('Správa offline map'),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _showOfflineManager();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showOfflineManager() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Offline mapy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.cloud_done_outlined, color: Color(0xFF4CAF50)),
+                      title: const Text('Pokrytí aktuálního zobrazení'),
+                      subtitle: FutureBuilder<double>(
+                        future: VectorTileProvider.estimateCoverage(
+                          southwest: LatLng(_mapController.camera.center.latitude - 0.04, _mapController.camera.center.longitude - 0.06),
+                          northeast: LatLng(_mapController.camera.center.latitude + 0.04, _mapController.camera.center.longitude + 0.06),
+                          zoom: _mapController.camera.zoom.floor().clamp(8, 16),
+                        ),
+                        builder: (context, snap) {
+                          final v = ((snap.data ?? 0) * 100).clamp(0, 100).toStringAsFixed(0);
+                          return Text('$v % dlaždic v cache');
+                        },
+                      ),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.download_for_offline_outlined, color: Color(0xFF4CAF50)),
+                      title: const Text('Stáhnout aktuální zobrazení'),
+                      subtitle: const Text('Stáhne mapu kolem aktuální pozice pro offline použití'),
+                      onTap: () async {
+                        Navigator.of(ctx).pop();
+                        if (!_isOnline) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Offline: nelze stahovat')), 
+                          );
+                          return;
+                        }
+                        final cam = _mapController.camera;
+                        final center = cam.center;
+                        final zoom = cam.zoom;
+                        // Build a small bounding box around current view approximating ~2km at current zoom
+                        final latDelta = 0.05; // ~5.5km at mid-latitudes; conservative
+                        final lngDelta = 0.08;
+                        final sw = LatLng(center.latitude - latDelta, center.longitude - lngDelta);
+                        final ne = LatLng(center.latitude + latDelta, center.longitude + lngDelta);
+                        // Choose zoom band centered around current zoom
+                        final minZ = zoom.floor().clamp(8, 14);
+                        final maxZ = (zoom.floor() + 2).clamp(10, 16);
+                        await MapyCzDownloadService.downloadBounds(
+                          southwest: sw,
+                          northeast: ne,
+                          minZoom: minZ,
+                          maxZoom: maxZ,
+                          concurrency: 24,
+                          batchSize: 800,
+                        );
+                        // Refresh tiles to leverage fresh cache
+                        _mapController.move(_mapController.camera.center, _mapController.camera.zoom);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Offline dlaždice se stahují na pozadí'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      leading: const Icon(Icons.select_all, color: Color(0xFF111827)),
+                      title: const Text('Stáhnout dle výběru oblasti'),
+                      subtitle: const Text('Vyberte obdélník přes mapu a stáhněte dlaždice předem'),
+                      onTap: () async {
+                        Navigator.of(ctx).pop();
+                        // Simple selection: use current view with wider margins as preset
+                        if (!_isOnline) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Offline: nelze stahovat')), 
+                          );
+                          return;
+                        }
+                        final cam = _mapController.camera;
+                        final c = cam.center;
+                        final z = cam.zoom.floor();
+                        final sw = LatLng(c.latitude - 0.12, c.longitude - 0.18);
+                        final ne = LatLng(c.latitude + 0.12, c.longitude + 0.18);
+                        await MapyCzDownloadService.downloadBounds(
+                          southwest: sw,
+                          northeast: ne,
+                          minZoom: z.clamp(8, 14),
+                          maxZoom: (z + 2).clamp(10, 16),
+                          concurrency: 24,
+                          batchSize: 800,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      leading: const Icon(Icons.cleaning_services_outlined, color: Color(0xFFF59E0B)),
+                      title: const Text('Vyčistit cache'),
+                      onTap: () async {
+                        await MapyCzDownloadService.clearCache();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Cache byla vyčištěna')), 
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+class _SimPreset {
+  final String label;
+  final double km;
+  final IconData icon;
+  final bool useSmart;
+  _SimPreset(this.label, this.km, this.icon, {this.useSmart = false});
+}
+
+// Custom painter for the directional cone/ray
+class DirectionalConePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final baseColor = const Color(0xFF4CAF50);
+
+    // Create a cone shape pointing forward
+    final path = ui.Path();
+
+    // Start from the center (your position)
+    final center = Offset(size.width / 2, size.height / 2);
+    final tip = Offset(size.width / 2, size.height / 2 - 30); // Shorter cone
+    const halfWidth = 20.0; // Wider cone
+
+    // Triangle path (upwards; widget rotation applies heading)
+    path.moveTo(center.dx, center.dy);
+    path.lineTo(center.dx - halfWidth, tip.dy);
+    path.lineTo(center.dx + halfWidth, tip.dy);
+    path.close();
+
+    // Linear gradient from center (opaque) to tip line (transparent)
+    final gradientPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true
+      ..shader = ui.Gradient.linear(
+        center,
+        tip,
+        [
+          baseColor.withOpacity(0.6), // More transparent
+          baseColor.withOpacity(0.0),
+        ],
+        [0.0, 1.0],
+      );
+
+    // Draw the cone with gradient fill and no border
+    canvas.drawPath(path, gradientPaint);
+  }
+  
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+} 
+
+class _MarkPointEditor extends StatefulWidget {
+  final ScrollController controller;
+  final void Function(Place) onSaved;
+  const _MarkPointEditor({required this.controller, required this.onSaved});
+
+  @override
+  State<_MarkPointEditor> createState() => _MarkPointEditorState();
+}
+
+class _MarkPointEditorState extends State<_MarkPointEditor> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
+  PlaceType _type = PlaceType.OTHER;
+  final List<File> _photos = [];
+
+  Future<void> _pickPhotos() async {
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage(maxWidth: 1920, maxHeight: 1080, imageQuality: 85);
+    if (images.isEmpty) return;
+    setState(() {
+      _photos.addAll(images.map((x) => File(x.path)));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text('Zaznamenat bod', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView(
+              controller: widget.controller,
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Název místa',
+                    prefixIcon: const Icon(Icons.place_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<PlaceType>(
+                  value: _type,
+                  onChanged: (v) => setState(() => _type = v ?? PlaceType.OTHER),
+                  decoration: InputDecoration(
+                    labelText: 'Typ místa',
+                    prefixIcon: const Icon(Icons.category_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  items: PlaceType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.name))).toList(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Popis (volitelné)',
+                    prefixIcon: const Icon(Icons.description_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _pickPhotos,
+                      icon: const Icon(Icons.add_a_photo_outlined),
+                      label: const Text('Přidat fotky'),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF111827), foregroundColor: Colors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('${_photos.length} fotek', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                if (_photos.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _photos.length,
+                      itemBuilder: (context, i) => Container(
+                        width: 100,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE5E7EB))),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.file(_photos[i], fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                final place = Place(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: _nameController.text.trim(),
+                  type: _type,
+                  photos: _photos.asMap().entries.map((e) => PlacePhoto(
+                        id: '${DateTime.now().millisecondsSinceEpoch}_${e.key}',
+                        url: e.value.path,
+                        uploadedAt: DateTime.now(),
+                        isLocal: true,
+                        description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+                      )).toList(),
+                  description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
+                  createdAt: DateTime.now(),
+                );
+                widget.onSaved(place);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Uložit a pokračovat'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

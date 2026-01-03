@@ -1,0 +1,81 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission for Google Sign-In -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Location permissions for GPS tracking -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    
+    <!-- Camera and storage permissions for image upload -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    
+    <application
+        android:label="strakataturistikaandroidapp"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
+
+        <!-- Disable deferred components to prevent Play Core R8 errors -->
+        <meta-data
+            android:name="flutter.deferred-components"
+            android:value="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <!-- URL Launcher intent filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+            
+        <!-- GPS Tracking Service -->
+        <service
+            android:name=".GPSTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+</manifest>

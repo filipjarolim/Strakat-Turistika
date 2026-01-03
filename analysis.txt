@@ -1,0 +1,765 @@
+Analyzing strakataturistikaandroidapp...                        
+
+   info • 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre • lib/config/app_theme.dart:13:9 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/config/app_theme.dart:133:30 • deprecated_member_use
+warning • Unused import: 'config/app_colors.dart' • lib/main.dart:4:8 • unused_import
+warning • Unused import: 'services/visit_data_service.dart' • lib/main.dart:21:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/main.dart:90:7 • avoid_print
+   info • 'textScaleFactor' is deprecated and shouldn't be used. Use textScaler instead. Use of textScaleFactor was deprecated in preparation for the upcoming nonlinear text scaling support. This feature was deprecated after v3.12.0-2.0.pre • lib/main.dart:123:13 • deprecated_member_use
+warning • The value of the field '_slideDirection' isn't used • lib/main.dart:175:7 • unused_field
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:342:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:343:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:344:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:347:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:382:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:383:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:384:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:387:44 • deprecated_member_use
+warning • The declaration '_buildTabBody' isn't referenced • lib/main.dart:412:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:424:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:425:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:426:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/main.dart:429:32 • deprecated_member_use
+warning • Unused import: 'package:mongo_dart/mongo_dart.dart' • lib/models/place_type_config.dart:2:8 • unused_import
+   info • 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion • lib/models/place_type_config.dart:69:20 • deprecated_member_use
+warning • The value of the local variable 'colorMap' isn't used • lib/models/place_type_config.dart:87:11 • unused_local_variable
+warning • The left operand can't be null, so the right operand is never executed • lib/models/place_type_config.dart:100:53 • dead_null_aware_expression
+   info • 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion • lib/models/place_type_config.dart:100:65 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:131:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:134:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:138:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:140:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:144:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:154:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:157:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:158:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:165:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:168:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:220:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:223:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:225:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:226:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:255:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:280:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:299:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:312:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/place_type_config.dart:329:7 • avoid_print
+   info • The constant name 'ADMIN' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:4:3 • constant_identifier_names
+   info • The constant name 'UZIVATEL' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:5:3 • constant_identifier_names
+   info • The constant name 'TESTER' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:6:3 • constant_identifier_names
+   info • The constant name 'DRAFT' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:10:3 • constant_identifier_names
+   info • The constant name 'PENDING_REVIEW' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:11:3 • constant_identifier_names
+   info • The constant name 'APPROVED' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:12:3 • constant_identifier_names
+   info • The constant name 'REJECTED' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:13:3 • constant_identifier_names
+   info • The constant name 'PEAK' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:17:3 • constant_identifier_names
+   info • The constant name 'TOWER' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:18:3 • constant_identifier_names
+   info • The constant name 'TREE' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:19:3 • constant_identifier_names
+   info • The constant name 'OTHER' isn't a lowerCamelCase identifier • lib/models/visit_data.dart:20:3 • constant_identifier_names
+   info • Don't invoke 'print' in production code • lib/models/visit_data.dart:257:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/models/visit_data.dart:258:7 • avoid_print
+warning • Unused import: '../widgets/admin_utils.dart' • lib/pages/admin_review_page.dart:14:8 • unused_import
+warning • Duplicate import • lib/pages/admin_review_page.dart:15:8 • duplicate_import
+warning • Unused import: '../widgets/admin_utils.dart' • lib/pages/admin_review_page.dart:15:8 • unused_import
+  error • Target of URI doesn't exist: '../widgets/ui/glass_ui.dart' • lib/pages/admin_review_page.dart:17:8 • uri_does_not_exist
+   info • Parameter 'key' could be a super parameter • lib/pages/admin_review_page.dart:25:9 • use_super_parameters
+   info • The private field _selectedFilter could be 'final' • lib/pages/admin_review_page.dart:38:14 • prefer_final_fields
+   info • The private field _isFormEditorOpen could be 'final' • lib/pages/admin_review_page.dart:58:8 • prefer_final_fields
+warning • The value of the field '_isFormEditorOpen' isn't used • lib/pages/admin_review_page.dart:58:8 • unused_field
+warning • The value of the field '_hasPendingFormChanges' isn't used • lib/pages/admin_review_page.dart:64:8 • unused_field
+warning • The value of the field '_hasPendingPlaceTypeChanges' isn't used • lib/pages/admin_review_page.dart:65:8 • unused_field
+   info • The private field _selectedVisitIds could be 'final' • lib/pages/admin_review_page.dart:68:15 • prefer_final_fields
+   info • The private field _adminActions could be 'final' • lib/pages/admin_review_page.dart:72:30 • prefer_final_fields
+warning • The declaration '_showAddPlaceTypeDialog' isn't referenced • lib/pages/admin_review_page.dart:200:8 • unused_element
+warning • The declaration '_addPlaceTypePoints' isn't referenced • lib/pages/admin_review_page.dart:428:16 • unused_element
+   info • Unnecessary braces in a string interpolation • lib/pages/admin_review_page.dart:463:67 • unnecessary_brace_in_string_interps
+warning • The declaration '_removePlaceTypePoints' isn't referenced • lib/pages/admin_review_page.dart:484:16 • unused_element
+warning • The declaration '_showRouteDetailsSheet' isn't referenced • lib/pages/admin_review_page.dart:930:16 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:967:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:977:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:981:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:999:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1012:69 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1125:75 • deprecated_member_use
+warning • The operand can't be 'null', so the condition is always 'true' • lib/pages/admin_review_page.dart:1143:69 • unnecessary_null_comparison
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1158:75 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1187:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1189:41 • deprecated_member_use
+warning • The declaration '_getPlaceTypeIcon' isn't referenced • lib/pages/admin_review_page.dart:1215:12 • unused_element
+warning • The declaration '_getStatusText' isn't referenced • lib/pages/admin_review_page.dart:1254:10 • unused_element
+  error • The method 'GlassScaffold' isn't defined for the type '_AdminReviewPageState' • lib/pages/admin_review_page.dart:1305:14 • undefined_method
+  error • The method 'GlassCard' isn't defined for the type '_AdminReviewPageState' • lib/pages/admin_review_page.dart:1307:18 • undefined_method
+  error • The method 'GlassButton' isn't defined for the type '_AdminReviewPageState' • lib/pages/admin_review_page.dart:1328:17 • undefined_method
+  error • The method 'GlassScaffold' isn't defined for the type '_AdminReviewPageState' • lib/pages/admin_review_page.dart:1339:12 • undefined_method
+  error • The method 'GlassHeader' isn't defined for the type '_AdminReviewPageState' • lib/pages/admin_review_page.dart:1342:11 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/admin_review_page.dart:1377:53 • deprecated_member_use
+warning • The declaration '_buildScreenshotPreview' isn't referenced • lib/pages/admin_review_page.dart:1548:10 • unused_element
+warning • The declaration '_buildRouteMap' isn't referenced • lib/pages/admin_review_page.dart:1641:10 • unused_element
+warning • The declaration '_showApproveDialog' isn't referenced • lib/pages/admin_review_page.dart:1737:17 • unused_element
+warning • The declaration '_showRejectDialog' isn't referenced • lib/pages/admin_review_page.dart:1808:17 • unused_element
+warning • The declaration '_buildPhotosSection' isn't referenced • lib/pages/admin_review_page.dart:1880:10 • unused_element
+warning • Unused import: 'login_page.dart' • lib/pages/explore_tab.dart:6:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:46:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:63:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:136:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:145:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:202:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:250:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:279:40 • deprecated_member_use
+   info • Statements in an if should be enclosed in a block • lib/pages/explore_tab.dart:286:42 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/pages/explore_tab.dart:287:19 • curly_braces_in_flow_control_structures
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/explore_tab.dart:297:34 • deprecated_member_use
+warning • Unused import: 'package:sensors_plus/sensors_plus.dart' • lib/pages/gps_page.dart:8:8 • unused_import
+warning • Unused import: 'package:permission_handler/permission_handler.dart' • lib/pages/gps_page.dart:9:8 • unused_import
+warning • Unused import: 'package:flutter_local_notifications/flutter_local_notifications.dart' • lib/pages/gps_page.dart:10:8 • unused_import
+warning • Unused import: 'package:firebase_core/firebase_core.dart' • lib/pages/gps_page.dart:11:8 • unused_import
+warning • Unused import: 'package:firebase_crashlytics/firebase_crashlytics.dart' • lib/pages/gps_page.dart:12:8 • unused_import
+warning • Duplicate import • lib/pages/gps_page.dart:15:8 • duplicate_import
+  error • Target of URI doesn't exist: 'package:strakataturistikaandroidapp/widgets/ui/glass_ui.dart' • lib/pages/gps_page.dart:34:8 • uri_does_not_exist
+warning • The value of the field '_hapticService' isn't used • lib/pages/gps_page.dart:47:23 • unused_field
+warning • The value of the field '_loggingService' isn't used • lib/pages/gps_page.dart:48:24 • unused_field
+warning • The value of the field '_panelSlideAnimation' isn't used • lib/pages/gps_page.dart:61:26 • unused_field
+warning • The value of the field '_isMapLoading' isn't used • lib/pages/gps_page.dart:75:8 • unused_field
+warning • The value of the field '_isDownloadingTiles' isn't used • lib/pages/gps_page.dart:84:8 • unused_field
+warning • The value of the field '_downloadProgress' isn't used • lib/pages/gps_page.dart:85:10 • unused_field
+warning • The value of the field '_downloadStatus' isn't used • lib/pages/gps_page.dart:86:10 • unused_field
+warning • The value of the field '_cacheCoverage' isn't used • lib/pages/gps_page.dart:91:10 • unused_field
+warning • The value of the field '_userPosition' isn't used • lib/pages/gps_page.dart:105:16 • unused_field
+warning • The operand can't be 'null', so the condition is always 'true' • lib/pages/gps_page.dart:150:28 • unnecessary_null_comparison
+   info • Don't use 'BuildContext's across async gaps • lib/pages/gps_page.dart:400:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/pages/gps_page.dart:444:78 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/pages/gps_page.dart:451:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/pages/gps_page.dart:485:9 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:607:66 • deprecated_member_use
+warning • The declaration '_showToolsSheet' isn't referenced • lib/pages/gps_page.dart:649:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:992:39 • deprecated_member_use
+warning • The declaration '_showStorageInfo' isn't referenced • lib/pages/gps_page.dart:1018:8 • unused_element
+warning • The declaration '_recenterMap' isn't referenced • lib/pages/gps_page.dart:1052:8 • unused_element
+warning • The declaration '_calculateDistance' isn't referenced • lib/pages/gps_page.dart:1061:10 • unused_element
+warning • The declaration '_floatingAction' isn't referenced • lib/pages/gps_page.dart:1066:10 • unused_element
+  error • The method 'GlassCard' isn't defined for the type '_GpsPageState' • lib/pages/gps_page.dart:1067:12 • undefined_method
+warning • The declaration '_largeFloatingAction' isn't referenced • lib/pages/gps_page.dart:1086:10 • unused_element
+  error • The method 'GlassCard' isn't defined for the type '_GpsPageState' • lib/pages/gps_page.dart:1087:12 • undefined_method
+warning • The declaration '_showMarkPointSheet' isn't referenced • lib/pages/gps_page.dart:1110:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1224:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1246:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1269:53 • deprecated_member_use
+   info • The 'child' argument should be last in widget constructor invocations • lib/pages/gps_page.dart:1316:25 • sort_child_properties_last
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1335:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1336:38 • deprecated_member_use
+warning • The declaration '_buildGlassyIconButton' isn't referenced • lib/pages/gps_page.dart:1408:10 • unused_element
+  error • The method 'GlassCard' isn't defined for the type '_GpsPageState' • lib/pages/gps_page.dart:1412:14 • undefined_method
+warning • The declaration '_showUnifiedTools' isn't referenced • lib/pages/gps_page.dart:1422:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1676:21 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/gps_page.dart:1677:21 • deprecated_member_use
+   info • The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/pages/login_page.dart:2:8 • unnecessary_import
+   info • Parameter 'key' could be a super parameter • lib/pages/login_page.dart:13:9 • use_super_parameters
+   info • Don't invoke 'print' in production code • lib/pages/login_page.dart:156:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/login_page.dart:180:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/login_page.dart:258:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/pages/login_page.dart:279:28 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/pages/login_page.dart:286:7 • avoid_print
+warning • The declaration '_buildAnimatedVeggieIcon' isn't referenced • lib/pages/login_page.dart:993:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/login_page.dart:1015:22 • deprecated_member_use
+warning • Duplicate import • lib/pages/results_page.dart:11:8 • duplicate_import
+   info • Parameter 'key' could be a super parameter • lib/pages/results_page.dart:27:9 • use_super_parameters
+   info • Parameter 'key' could be a super parameter • lib/pages/results_page.dart:86:9 • use_super_parameters
+   info • The private field _sortBy could be 'final' • lib/pages/results_page.dart:213:10 • prefer_final_fields
+   info • The private field _sortDesc could be 'final' • lib/pages/results_page.dart:214:8 • prefer_final_fields
+   info • The private field _searchQuery could be 'final' • lib/pages/results_page.dart:217:10 • prefer_final_fields
+   info • The private field _showLeaderboard could be 'final' • lib/pages/results_page.dart:219:8 • prefer_final_fields
+warning • The value of the field '_showLeaderboard' isn't used • lib/pages/results_page.dart:219:8 • unused_field
+   info • The private field _sortLeaderboardByVisits could be 'final' • lib/pages/results_page.dart:220:8 • prefer_final_fields
+   info • Don't invoke 'print' in production code • lib/pages/results_page.dart:274:9 • avoid_print
+warning • The declaration '_loadNextPage' isn't referenced • lib/pages/results_page.dart:369:16 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:596:39 • deprecated_member_use
+warning • The declaration '_buildResultsList' isn't referenced • lib/pages/results_page.dart:631:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:694:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:729:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:732:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:769:57 • deprecated_member_use
+   info • Unnecessary use of string interpolation • lib/pages/results_page.dart:778:29 • unnecessary_string_interpolations
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:923:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:925:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:988:56 • deprecated_member_use
+   info • Unnecessary use of string interpolation • lib/pages/results_page.dart:996:32 • unnecessary_string_interpolations
+warning • The '!' will have no effect because the receiver can't be null • lib/pages/results_page.dart:1006:64 • unnecessary_non_null_assertion
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:1033:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:1055:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:1057:58 • deprecated_member_use
+   info • Unnecessary use of string interpolation • lib/pages/results_page.dart:1132:27 • unnecessary_string_interpolations
+warning • The declaration '_buildFilters' isn't referenced • lib/pages/results_page.dart:1163:10 • unused_element
+warning • The value of the local variable 'searchWidth' isn't used • lib/pages/results_page.dart:1199:24 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:1320:58 • deprecated_member_use
+warning • The declaration '_buildModernIconButton' isn't referenced • lib/pages/results_page.dart:1516:10 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/results_page.dart:1530:33 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/pages/routes_page.dart:7:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/routes_page.dart:98:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/routes_page.dart:194:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/routes_page.dart:234:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/routes_page.dart:258:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/routes_page.dart:435:59 • deprecated_member_use
+  error • Target of URI doesn't exist: '../widgets/ui/glass_ui.dart' • lib/pages/settings_page.dart:11:8 • uri_does_not_exist
+   info • Parameter 'key' could be a super parameter • lib/pages/settings_page.dart:14:9 • use_super_parameters
+  error • The method 'GlassScaffold' isn't defined for the type 'SettingsPage' • lib/pages/settings_page.dart:19:12 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:29:41 • deprecated_member_use
+  error • The method 'GlassCard' isn't defined for the type 'SettingsPage' • lib/pages/settings_page.dart:58:19 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:64:68 • deprecated_member_use
+  error • The method 'GlassCard' isn't defined for the type 'SettingsPage' • lib/pages/settings_page.dart:163:30 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:174:45 • deprecated_member_use
+  error • The method 'GlassCard' isn't defined for the type 'SettingsPage' • lib/pages/settings_page.dart:198:30 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:209:58 • deprecated_member_use
+warning • The declaration '_showDisplayNameDialog' isn't referenced • lib/pages/settings_page.dart:458:8 • unused_element
+  error • The method 'GlassCard' isn't defined for the type 'SettingsPage' • lib/pages/settings_page.dart:569:14 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:578:48 • deprecated_member_use
+warning • The declaration '_showDogNameDialog' isn't referenced • lib/pages/settings_page.dart:622:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/settings_page.dart:638:50 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/pages/settings_page.dart:719:32 • use_build_context_synchronously
+warning • Unused import: 'webview_page.dart' • lib/pages/user_profile_page.dart:13:8 • unused_import
+   info • Parameter 'key' could be a super parameter • lib/pages/user_profile_page.dart:23:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:109:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:134:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:315:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:361:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:400:65 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:490:65 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/pages/user_profile_page.dart:715:51 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/pages/user_profile_page.dart:738:51 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/pages/user_profile_page.dart:761:47 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:827:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:845:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_profile_page.dart:897:69 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/pages/user_profile_page.dart:934:59 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/pages/user_profile_page.dart:1094:59 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/pages/user_profile_page.dart:1096:30 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/pages/user_profile_page.dart:1188:29 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/pages/user_visits_page.dart:51:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_visits_page.dart:121:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_visits_page.dart:152:72 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_visits_page.dart:246:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_visits_page.dart:248:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/user_visits_page.dart:294:54 • deprecated_member_use
+   info • The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/pages/visit_data_form_page.dart:2:8 • unnecessary_import
+warning • Unused import: '../widgets/image_picker_widget.dart' • lib/pages/visit_data_form_page.dart:14:8 • unused_import
+warning • Unused import: 'package:flutter_map/flutter_map.dart' • lib/pages/visit_data_form_page.dart:15:8 • unused_import
+warning • Unused import: '../services/error_recovery_service.dart' • lib/pages/visit_data_form_page.dart:17:8 • unused_import
+   info • Parameter 'key' could be a super parameter • lib/pages/visit_data_form_page.dart:23:9 • use_super_parameters
+   info • The private field _selectedImages could be 'final' • lib/pages/visit_data_form_page.dart:53:14 • prefer_final_fields
+warning • The value of the field '_slideAnimation' isn't used • lib/pages/visit_data_form_page.dart:57:26 • unused_field
+warning • The value of the field '_fadeAnimation' isn't used • lib/pages/visit_data_form_page.dart:58:26 • unused_field
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:77:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:106:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:113:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:116:7 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/pages/visit_data_form_page.dart:128:30 • unnecessary_null_comparison
+warning • The '!' will have no effect because the receiver can't be null • lib/pages/visit_data_form_page.dart:129:45 • unnecessary_non_null_assertion
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:139:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:142:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:148:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:202:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:215:11 • avoid_print
+warning • The declaration '_getMapCenter' isn't referenced • lib/pages/visit_data_form_page.dart:221:10 • unused_element
+warning • The declaration '_getMapZoom' isn't referenced • lib/pages/visit_data_form_page.dart:238:10 • unused_element
+   info • Don't invoke 'print' in production code • lib/pages/visit_data_form_page.dart:344:17 • avoid_print
+   info • Unnecessary use of '??' with 'null' • lib/pages/visit_data_form_page.dart:437:53 • unnecessary_null_in_if_null_operators
+   info • Unnecessary use of '??' with 'null' • lib/pages/visit_data_form_page.dart:438:66 • unnecessary_null_in_if_null_operators
+   info • Unnecessary use of '??' with 'null' • lib/pages/visit_data_form_page.dart:468:53 • unnecessary_null_in_if_null_operators
+   info • Unnecessary use of '??' with 'null' • lib/pages/visit_data_form_page.dart:469:66 • unnecessary_null_in_if_null_operators
+   info • Don't use 'BuildContext's across async gaps • lib/pages/visit_data_form_page.dart:484:26 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/visit_data_form_page.dart:520:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/visit_data_form_page.dart:591:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/visit_data_form_page.dart:628:31 • deprecated_member_use
+warning • The value of the local variable 'hasValue' isn't used • lib/pages/visit_data_form_page.dart:962:11 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/pages/visit_data_form_page.dart:1052:45 • deprecated_member_use
+   info • Unnecessary use of 'toList' in a spread • lib/pages/visit_data_form_page.dart:1189:10 • unnecessary_to_list_in_spreads
+warning • Unused import: '../services/mongodb_service.dart' • lib/services/admin_services.dart:5:8 • unused_import
+warning • The value of the local variable 'placeTypeService' isn't used • lib/services/admin_services.dart:200:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:202:7 • avoid_print
+warning • The value of the local variable 'placeTypeService' isn't used • lib/services/admin_services.dart:210:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:212:7 • avoid_print
+warning • The value of the local variable 'placeTypeService' isn't used • lib/services/admin_services.dart:220:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:222:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:293:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:304:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:313:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:330:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/admin_services.dart:333:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/services/app_update_service.dart:36:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/services/app_update_service.dart:39:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/services/app_update_service.dart:93:34 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:25:7 • avoid_print
+warning • The value of the local variable 'prefs' isn't used • lib/services/auth_service.dart:39:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:40:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:42:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:48:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:50:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:70:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:71:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:76:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:77:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:82:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:83:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:89:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:98:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:100:7 • avoid_print
+warning • The value of the local variable 'isSignedIn' isn't used • lib/services/auth_service.dart:108:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:111:7 • avoid_print
+warning • The value of the local variable 'googleAuth' isn't used • lib/services/auth_service.dart:143:42 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:195:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:200:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:277:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:338:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:380:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:396:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:418:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:419:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:420:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:421:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:422:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:426:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:469:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:492:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:513:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:515:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:554:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:557:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:572:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:576:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:582:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:586:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:589:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:601:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:604:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:616:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:618:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:626:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/auth_service.dart:632:5 • avoid_print
+   info • The 'if' statement could be replaced by a null-aware assignment • lib/services/cloudinary_service.dart:11:5 • prefer_conditional_assignment
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:25:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:31:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/services/cloudinary_service.dart:31:28 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:43:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:46:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:58:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:62:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:63:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:64:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:65:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:79:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:95:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:98:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:109:7 • avoid_print
+warning • The value of the local variable 'apiKey' isn't used • lib/services/cloudinary_service.dart:112:13 • unused_local_variable
+warning • The value of the local variable 'apiSecret' isn't used • lib/services/cloudinary_service.dart:113:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:138:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:141:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:147:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:155:7 • avoid_print
+warning • The value of the local variable 'apiSecret' isn't used • lib/services/cloudinary_service.dart:159:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:184:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:187:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:191:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:200:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/cloudinary_service.dart:207:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/download_options_service.dart:30:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/download_options_service.dart:77:5 • avoid_print
+   info • The private field _trackPoints could be 'final' • lib/services/enhanced_gps_tracking_service.dart:29:20 • prefer_final_fields
+   info • The private field _processNoise could be 'final' • lib/services/enhanced_gps_tracking_service.dart:52:10 • prefer_final_fields
+   info • The private field _measurementNoise could be 'final' • lib/services/enhanced_gps_tracking_service.dart:53:10 • prefer_final_fields
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:135:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:158:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:181:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:187:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:192:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:198:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:202:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:206:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:212:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:216:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:224:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:228:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:234:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:235:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:238:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:241:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:248:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:252:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:254:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:257:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:262:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:263:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:264:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:265:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:303:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:344:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:350:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:373:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:422:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:438:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:449:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:481:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:486:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:504:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:508:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:551:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:553:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:562:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:589:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:593:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:655:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:657:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:738:9 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'false' • lib/services/enhanced_gps_tracking_service.dart:745:47 • unnecessary_null_comparison
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:752:36 • unnecessary_non_null_assertion
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:777:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:783:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:801:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:820:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:827:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:838:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:845:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:849:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:874:13 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/services/enhanced_gps_tracking_service.dart:874:91 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:883:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:912:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:1008:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:1010:9 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/enhanced_gps_tracking_service.dart:1031:29 • unnecessary_null_comparison
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/enhanced_gps_tracking_service.dart:1031:69 • unnecessary_null_comparison
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1032:50 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1032:82 • unnecessary_non_null_assertion
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/enhanced_gps_tracking_service.dart:1041:29 • unnecessary_null_comparison
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1042:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1042:104 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1043:64 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/services/enhanced_gps_tracking_service.dart:1043:104 • unnecessary_non_null_assertion
+   info • Don't invoke 'print' in production code • lib/services/enhanced_gps_tracking_service.dart:1074:5 • avoid_print
+warning • The value of the local variable 'testValue' isn't used • lib/services/error_recovery_service.dart:85:13 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/error_recovery_service.dart:167:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/error_recovery_service.dart:216:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/error_recovery_service.dart:226:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/error_recovery_service.dart:240:7 • avoid_print
+warning • Unused import: 'package:mongo_dart/mongo_dart.dart' • lib/services/form_field_service.dart:1:8 • unused_import
+warning • Unused import: 'package:mongo_dart/mongo_dart.dart' • lib/services/form_field_service.dart:2:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:142:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:188:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:190:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:219:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:242:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:267:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:280:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/form_field_service.dart:299:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:23:37 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:25:31 • use_build_context_synchronously
+warning • The declaration '_showGPSDisabledDialog' isn't referenced • lib/services/gps_services.dart:81:15 • unused_element
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:264:7 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/gps_services.dart:279:35 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:281:9 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/gps_services.dart:293:32 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:295:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:299:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:304:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:306:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:336:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:345:28 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:401:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:402:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:403:7 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:406:30 • use_build_context_synchronously
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/gps_services.dart:436:20 • unnecessary_null_comparison
+   info • Don't use 'BuildContext's across async gaps • lib/services/gps_services.dart:482:28 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/services/gps_services.dart:489:39 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:529:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:530:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:531:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:532:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:533:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:534:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:541:7 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/services/gps_services.dart:546:28 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:548:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:550:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:556:13 • avoid_print
+warning • The '!' will have no effect because the receiver can't be null • lib/services/gps_services.dart:556:82 • unnecessary_non_null_assertion
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:559:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/gps_services.dart:563:7 • avoid_print
+warning • The value of the field '_channel' isn't used • lib/services/haptic_service.dart:4:30 • unused_field
+   info • Don't invoke 'print' in production code • lib/services/haptic_service.dart:12:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/haptic_service.dart:21:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/haptic_service.dart:30:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/haptic_service.dart:39:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/haptic_service.dart:48:7 • avoid_print
+warning • Unused import: 'dart:io' • lib/services/logging_service.dart:1:8 • unused_import
+warning • Unused import: 'package:path_provider/path_provider.dart' • lib/services/logging_service.dart:2:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/services/logging_service.dart:36:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/logging_service.dart:45:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/logging_service.dart:55:7 • avoid_print
+warning • Unused import: 'package:http/http.dart' • lib/services/mapy_cz_download_service.dart:5:8 • unused_import
+warning • Unused import: 'package:archive/archive.dart' • lib/services/mapy_cz_download_service.dart:8:8 • unused_import
+warning • Unused import: 'package:crypto/crypto.dart' • lib/services/mapy_cz_download_service.dart:9:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:51:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:56:7 • avoid_print
+warning • The value of the local variable 'zoomDelayMs' isn't used • lib/services/mapy_cz_download_service.dart:75:17 • unused_local_variable
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:78:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:79:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:113:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:150:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:155:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:168:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:228:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:255:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:276:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:295:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:357:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:405:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:418:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/services/mapy_cz_download_service.dart:527:34 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:559:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:562:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/services/mapy_cz_download_service.dart:562:40 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/services/mapy_cz_download_service.dart:562:45 • unnecessary_brace_in_string_interps
+   info • Unnecessary braces in a string interpolation • lib/services/mapy_cz_download_service.dart:562:50 • unnecessary_brace_in_string_interps
+warning • The declaration '_getTilesForBounds' isn't referenced • lib/services/mapy_cz_download_service.dart:581:33 • unused_element
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:669:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mapy_cz_download_service.dart:696:5 • avoid_print
+warning • The value of the field '_databaseUrl' isn't used • lib/services/mongodb_service.dart:18:23 • unused_field
+warning • The value of the field '_fallbackDatabaseUrl' isn't used • lib/services/mongodb_service.dart:19:23 • unused_field
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:31:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:41:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:48:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:49:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:54:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:60:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:64:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:65:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:76:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:79:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:97:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:102:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:104:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:108:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:138:9 • avoid_print
+warning • The declaration '_executeWithRetry' isn't referenced • lib/services/mongodb_service.dart:150:20 • unused_element
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:158:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:198:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:201:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:210:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:217:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:218:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:222:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:223:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:224:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:225:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:226:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:227:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:228:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:232:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:235:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:243:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:250:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:251:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:255:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:256:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:257:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:258:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:259:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:260:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:261:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:265:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:268:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/mongodb_service.dart:275:5 • avoid_print
+warning • Unused import: 'package:flutter/material.dart' • lib/services/tracking_state_service.dart:3:8 • unused_import
+warning • The value of the local variable 'notificationDetails' isn't used • lib/services/tracking_state_service.dart:144:11 • unused_local_variable
+warning • The value of the local variable 'notificationDetails' isn't used • lib/services/tracking_state_service.dart:170:11 • unused_local_variable
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' • lib/services/vector_tile_provider.dart:1:8 • unnecessary_import
+warning • Unused import: 'dart:convert' • lib/services/vector_tile_provider.dart:2:8 • unused_import
+   info • The import of 'package:flutter/painting.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/services/vector_tile_provider.dart:7:8 • unnecessary_import
+   info • The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/foundation.dart' • lib/services/vector_tile_provider.dart:8:8 • unnecessary_import
+   info • The import of 'package:hive/hive.dart' is unnecessary because all of the used elements are also provided by the import of 'package:hive_flutter/hive_flutter.dart' • lib/services/vector_tile_provider.dart:13:8 • unnecessary_import
+   info • Field overrides a field inherited from 'TileProvider' • lib/services/vector_tile_provider.dart:20:29 • overridden_fields
+   info • The member 'headers' overrides an inherited member but isn't annotated with '@override' • lib/services/vector_tile_provider.dart:20:29 • annotate_overrides
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:56:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:108:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:140:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:166:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:168:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:177:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/services/vector_tile_provider.dart:199:35 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:241:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:252:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:254:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:275:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/vector_tile_provider.dart:320:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:50:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:59:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:62:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:72:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:83:10 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:87:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:90:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:235:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:242:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:249:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:260:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:267:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:277:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:284:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:294:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:336:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:346:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:361:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:364:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:368:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:523:9 • avoid_print
+warning • The '!' will have no effect because the receiver can't be null • lib/services/visit_data_service.dart:630:39 • unnecessary_non_null_assertion
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:667:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:683:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:712:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:725:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:765:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:785:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:804:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:814:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:821:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:824:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:828:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:844:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:880:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:883:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/services/visit_data_service.dart:887:7 • avoid_print
+warning • The '!' will have no effect because the receiver can't be null • lib/utils/gps_utils.dart:145:63 • unnecessary_non_null_assertion
+  error • Target of URI doesn't exist: 'ui/glass_ui.dart' • lib/widgets/admin_control_tab.dart:8:8 • uri_does_not_exist
+  error • The method 'GlassCard' isn't defined for the type 'AdminControlTab' • lib/widgets/admin_control_tab.dart:61:20 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_control_tab.dart:74:70 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_control_tab.dart:83:70 • deprecated_member_use
+  error • The method 'GlassCard' isn't defined for the type 'AdminControlTab' • lib/widgets/admin_control_tab.dart:99:20 • undefined_method
+warning • The value of the local variable 'userName' isn't used • lib/widgets/admin_control_tab.dart:124:17 • unused_local_variable
+warning • The declaration '_buildInfoChip' isn't referenced • lib/widgets/admin_control_tab.dart:180:17 • unused_element
+warning • The declaration '_buildActionButton' isn't referenced • lib/widgets/admin_control_tab.dart:214:17 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_control_tab.dart:313:41 • deprecated_member_use
+  error • The method 'GlassButton' isn't defined for the type 'AdminControlTab' • lib/widgets/admin_control_tab.dart:327:13 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_control_tab.dart:329:34 • undefined_identifier
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_control_tab.dart:329:64 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminControlTab' • lib/widgets/admin_control_tab.dart:342:24 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_control_tab.dart:344:25 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminControlTab' • lib/widgets/admin_control_tab.dart:351:24 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_control_tab.dart:353:25 • undefined_identifier
+warning • The declaration '_getStatusColor' isn't referenced • lib/widgets/admin_control_tab.dart:443:16 • unused_element
+warning • The declaration '_getStatusIcon' isn't referenced • lib/widgets/admin_control_tab.dart:458:19 • unused_element
+warning • The declaration '_getStatusText' isn't referenced • lib/widgets/admin_control_tab.dart:473:17 • unused_element
+warning • The declaration '_showApproveConfirmation' isn't referenced • lib/widgets/admin_control_tab.dart:492:23 • unused_element
+warning • The declaration '_showRejectConfirmation' isn't referenced • lib/widgets/admin_control_tab.dart:587:23 • unused_element
+warning • The declaration '_buildMapAndPhotosPreview' isn't referenced • lib/widgets/admin_control_tab.dart:684:17 • unused_element
+warning • Unnecessary type check; the result is always 'true' • lib/widgets/admin_control_tab.dart:690:9 • unnecessary_type_check
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:29:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:53:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:76:82 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:85:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:106:78 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:108:97 • deprecated_member_use
+warning • Unnecessary type check; the result is always 'true' • lib/widgets/admin_dialogs.dart:348:9 • unnecessary_type_check
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:479:71 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:870:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:901:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:1425:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:1453:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_dialogs.dart:1486:57 • deprecated_member_use
+   info • Unnecessary braces in a string interpolation • lib/widgets/admin_dialogs.dart:1780:70 • unnecessary_brace_in_string_interps
+  error • Target of URI doesn't exist: 'ui/glass_ui.dart' • lib/widgets/admin_form_tab.dart:6:8 • uri_does_not_exist
+  error • The method 'GlassCard' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:51:11 • undefined_method
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:75:21 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:77:29 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:124:27 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:126:35 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:131:27 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:133:35 • undefined_identifier
+  error • The method 'GlassCard' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:147:11 • undefined_method
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:171:21 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:173:29 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:178:21 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:180:29 • undefined_identifier
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:258:27 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:260:35 • undefined_identifier
+  error • The method 'GlassCard' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:275:11 • undefined_method
+  error • The method 'GlassButton' isn't defined for the type 'AdminFormTab' • lib/widgets/admin_form_tab.dart:300:21 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_form_tab.dart:302:29 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_place_types_tab.dart:28:39 • deprecated_member_use
+   info • The imported package 'intl' isn't a dependency of the importing package • lib/widgets/admin_utils.dart:2:8 • depend_on_referenced_packages
+warning • Unused import: '../models/place_type_config.dart' • lib/widgets/admin_utils.dart:5:8 • unused_import
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/widgets/admin_utils.dart:455:37 • invalid_null_aware_operator
+  error • Target of URI doesn't exist: 'ui/glass_ui.dart' • lib/widgets/admin_widgets.dart:2:8 • uri_does_not_exist
+  error • The method 'GlassCard' isn't defined for the type 'AdminWidgets' • lib/widgets/admin_widgets.dart:173:12 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:188:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:191:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:221:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:223:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:249:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:251:58 • deprecated_member_use
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/widgets/admin_widgets.dart:259:42 • invalid_null_aware_operator
+warning • The operand can't be 'null', so the condition is always 'true' • lib/widgets/admin_widgets.dart:336:32 • unnecessary_null_comparison
+warning • The '!' will have no effect because the receiver can't be null • lib/widgets/admin_widgets.dart:336:59 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/widgets/admin_widgets.dart:350:41 • unnecessary_non_null_assertion
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:356:59 • deprecated_member_use
+  error • The method 'GlassButton' isn't defined for the type 'AdminWidgets' • lib/widgets/admin_widgets.dart:383:24 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_widgets.dart:385:25 • undefined_identifier
+  error • The method 'GlassCard' isn't defined for the type 'AdminWidgets' • lib/widgets/admin_widgets.dart:404:12 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:413:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:441:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:457:41 • deprecated_member_use
+  error • The method 'GlassCard' isn't defined for the type 'AdminWidgets' • lib/widgets/admin_widgets.dart:506:12 • undefined_method
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:523:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:531:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:563:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:565:71 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:587:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:588:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:592:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:593:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:627:51 • deprecated_member_use
+  error • The method 'GlassButton' isn't defined for the type 'AdminWidgets' • lib/widgets/admin_widgets.dart:635:15 • undefined_method
+  error • Undefined name 'GlassButtonType' • lib/widgets/admin_widgets.dart:637:23 • undefined_identifier
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:649:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:677:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:683:84 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:688:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:712:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:714:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:717:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:775:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:818:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:820:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:828:26 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/admin_widgets.dart:837:30 • deprecated_member_use
+warning • Unused import: '../animations/app_animations.dart' • lib/widgets/custom_bottom_nav_bar.dart:4:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:27:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:34:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:40:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:112:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:113:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/custom_bottom_nav_bar.dart:119:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/download_options_widget.dart:41:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/download_options_widget.dart:57:50 • deprecated_member_use
+   info • Unnecessary use of 'toList' in a spread • lib/widgets/download_options_widget.dart:95:64 • unnecessary_to_list_in_spreads
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/download_options_widget.dart:162:53 • deprecated_member_use
+   info • The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • lib/widgets/gps/tracking_bottom_sheet.dart:1:8 • unnecessary_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/gps/tracking_bottom_sheet.dart:49:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/gps/tracking_bottom_sheet.dart:213:75 • deprecated_member_use
+   info • Unnecessary use of string interpolation • lib/widgets/gps/tracking_bottom_sheet.dart:240:57 • unnecessary_string_interpolations
+   info • Unnecessary use of string interpolation • lib/widgets/gps/tracking_bottom_sheet.dart:242:54 • unnecessary_string_interpolations
+   info • Unnecessary use of string interpolation • lib/widgets/gps/tracking_bottom_sheet.dart:248:57 • unnecessary_string_interpolations
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/gps/tracking_bottom_sheet.dart:339:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/gps/tracking_bottom_sheet.dart:349:42 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/widgets/image_picker_widget.dart:12:9 • use_super_parameters
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:53:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:61:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:77:7 • avoid_print
+warning • The value of the local variable 'isEmulator' isn't used • lib/widgets/image_picker_widget.dart:114:16 • unused_local_variable
+warning • The declaration '_reinitializePicker' isn't referenced • lib/widgets/image_picker_widget.dart:120:16 • unused_element
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:176:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:217:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/widgets/image_picker_widget.dart:295:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/image_picker_widget.dart:438:53 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/widgets/route_thumbnail.dart:12:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/route_thumbnail.dart:49:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/widgets/route_thumbnail.dart:50:38 • deprecated_member_use
+
