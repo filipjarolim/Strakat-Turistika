@@ -6,7 +6,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/tracking_state_service.dart';
 import '../services/haptic_service.dart';
+import '../widgets/ui/app_button.dart';
 import '../services/logging_service.dart';
+import '../widgets/ui/app_toast.dart';
 import '../utils/gps_utils.dart';
 import '../models/tracking_summary.dart';
 import '../services/visit_data_service.dart';
@@ -333,21 +335,13 @@ class GpsServices {
           });
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Chyba při spuštění sledování: Nedostatečná oprávnění'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        AppToast.showError(context, 'Chyba při spuštění sledování: Nedostatečná oprávnění');
       }
     } catch (e) {
       LoggingService().log('Failed to start tracking: $e', level: 'ERROR');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Chyba při spuštění sledování: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      AppToast.showError(context, 'Chyba při spuštění sledování: $e');
     }
   }
 
@@ -403,12 +397,8 @@ class GpsServices {
       print('Permission: $permission');
       
       if (!serviceEnabled) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('GPS služby jsou vypnuté. Zapněte GPS v nastavení.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        AppToast.showInfo(context, 'GPS služby jsou vypnuté. Zapněte GPS v nastavení.');
       }
     } catch (e) {
       LoggingService().log('GPS status check failed: $e', level: 'ERROR');
@@ -479,34 +469,7 @@ class GpsServices {
       }
       
       HapticService.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.bug_report, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  '🐛 Smart route with smooth curves added',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFFFF9800),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(12),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      AppToast.showSuccess(context, 'Smart route with smooth curves added');
     } catch (e) {
       LoggingService().log('Failed to add debug track points: $e', level: 'ERROR');
     }

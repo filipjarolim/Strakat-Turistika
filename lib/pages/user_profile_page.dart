@@ -3,15 +3,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/visit_data.dart';
-import '../widgets/route_thumbnail.dart';
 import '../models/tracking_summary.dart';
+import '../widgets/route_thumbnail.dart';
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/app_toast.dart';
+import '../services/logging_service.dart';
 
 import '../services/visit_data_service.dart';
 import '../services/auth_service.dart';
 import '../services/mongodb_service.dart';
 import '../services/cloudinary_service.dart';
 import 'webview_page.dart';
-import 'routes_page.dart';
 import 'login_page.dart';
 import 'visit_data_form_page.dart';
 import '../services/vector_tile_provider.dart';
@@ -66,12 +68,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Chyba načítání návštěv: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppToast.showError(context, 'Chyba načítání návštěv: $e');
       }
     }
   }
@@ -91,9 +88,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Removed embedded login check as it is now gated in main.dart
     final currentUser = AuthService.currentUser;
+    // Fallback if somehow reached without auth (e.g. direct link in future)
     if (currentUser == null) {
-      return const LoginPage();
+       return const SizedBox(); // Or a "Not Authorized" placeholder
     }
 
     final totalPoints = _getTotalPoints();
@@ -106,7 +105,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         elevation: 0,
         centerTitle: false,
         scrolledUnderElevation: 2,
-        shadowColor: Colors.black.withOpacity(0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         title: const Text(
           'Můj Profil',
           style: TextStyle(
@@ -131,7 +130,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2)),
                     ],
                   ),
                   child: ClipOval(
@@ -201,19 +200,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             letterSpacing: -0.5,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const RoutesPage()),
-                            );
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF2E7D32),
-                            textStyle: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          child: const Text('Zobrazit vše'),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -270,29 +256,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
                      // Logout Button
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
+                      child: AppButton(
                         onPressed: _showLogoutConfirmation,
-                        icon: const Icon(Icons.logout_rounded),
-                        label: const Text('Odhlásit se'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red[700],
-                          side: BorderSide(color: Colors.red[100]!),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          backgroundColor: Colors.red[50],
-                        ),
+                        icon: Icons.logout_rounded,
+                        text: 'Odhlásit se',
+                        type: AppButtonType.destructiveOutline,
+                        size: AppButtonSize.medium,
                       ),
                     ),
                     
                     const SizedBox(height: 16),
                     Center(
-                      child: TextButton(
+                      child: AppButton(
                         onPressed: _showDeleteAccountConfirmation,
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey[500],
-                        ),
-                        child: const Text('Smazat účet', style: TextStyle(fontSize: 14)),
+                        text: 'Smazat účet',
+                        type: AppButtonType.ghost,
+                        size: AppButtonSize.small,
                       ),
                     ),
                     
@@ -312,7 +291,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.04),
+          color: Colors.black.withValues(alpha: 0.04),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
@@ -358,7 +337,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: iconColor, size: 28),
@@ -397,7 +376,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: (iconColor ?? const Color(0xFF2E7D32)).withOpacity(0.08),
+                  color: (iconColor ?? const Color(0xFF2E7D32)).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: iconColor ?? const Color(0xFF2E7D32), size: 22),
@@ -487,7 +466,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(visit.state).withOpacity(0.1),
+                            color: _getStatusColor(visit.state).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -705,7 +684,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: AppButton(
                       onPressed: () async {
                         final sw = const LatLng(48.9, 12.3);
                         final ne = const LatLng(50.6, 16.0);
@@ -714,21 +693,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         );
                         if (mounted) Navigator.of(ctx).pop();
                       },
-                      icon: const Icon(Icons.public),
-                      label: const Text('ČR (Základ)'),
-                      style: ElevatedButton.styleFrom(
-                         padding: const EdgeInsets.symmetric(vertical: 16),
-                         backgroundColor: Colors.white,
-                         foregroundColor: const Color(0xFF111827),
-                         elevation: 0,
-                         side: BorderSide(color: Colors.grey[300]!),
-                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                      icon: Icons.public,
+                      text: 'ČR (Základ)',
+                      type: AppButtonType.outline,
+                      size: AppButtonSize.medium,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: AppButton(
                       onPressed: () async {
                         final sw = const LatLng(49.95, 14.15);
                         final ne = const LatLng(50.25, 14.75);
@@ -737,16 +710,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         );
                         if (mounted) Navigator.of(ctx).pop();
                       },
-                      icon: const Icon(Icons.location_city),
-                      label: const Text('Praha (Detail)'),
-                      style: ElevatedButton.styleFrom(
-                         padding: const EdgeInsets.symmetric(vertical: 16),
-                         backgroundColor: Colors.white,
-                         foregroundColor: const Color(0xFF111827),
-                         elevation: 0,
-                         side: BorderSide(color: Colors.grey[300]!),
-                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                      icon: Icons.location_city,
+                      text: 'Praha (Detail)',
+                      type: AppButtonType.outline,
+                      size: AppButtonSize.medium,
                     ),
                   ),
                 ],
@@ -755,14 +722,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                child: TextButton.icon(
+                child: AppButton(
                   onPressed: () async {
                     await MapyCzDownloadService.clearCache();
                     if (mounted) Navigator.of(ctx).pop();
                   },
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Vymazat stažené mapy'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red[700]),
+                  icon: Icons.delete_outline,
+                  text: 'Vymazat stažené mapy',
+                  type: AppButtonType.destructiveOutline,
+                  size: AppButtonSize.medium,
                 ),
               ),
             ],
@@ -824,7 +792,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   Container(
                     width: 56, height: 56,
                     decoration: BoxDecoration(
-                      color: _getStatusColor(visit.state).withOpacity(0.1),
+                      color: _getStatusColor(visit.state).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(_getStatusIcon(visit.state), color: _getStatusColor(visit.state), size: 28),
@@ -842,7 +810,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                             color: _getStatusColor(visit.state).withOpacity(0.1),
+                             color: _getStatusColor(visit.state).withValues(alpha: 0.1),
                              borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -894,7 +862,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFE5E7EB)),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
                         ),
                         child: Row(
                           children: [
@@ -1074,7 +1042,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
+                    child: AppButton(
                       onPressed: isUploadingImage ? null : () async {
                            final u = AuthService.currentUser;
                            if (u == null) { Navigator.pop(ctx); return; }
@@ -1093,18 +1061,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
                              
                              if (mounted) { Navigator.pop(ctx); setState(() {}); }
                            } catch (e) {
-                             print('Error updating profile: $e');
+                             LoggingService().log('Error updating profile: $e', level: 'ERROR');
                            } finally {
                              setModalState(() => isUploadingImage = false);
                            }
                       },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF2E7D32),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: isUploadingImage ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Uložit změny', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      text: 'Uložit změny',
+                      type: AppButtonType.primary,
+                      size: AppButtonSize.large,
+                      isLoading: isUploadingImage,
                     ),
                   ),
                 ],
@@ -1185,7 +1150,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
        await AuthService.signOut();
        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (r) => false);
      } catch (e) {
-       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chyba: $e'), backgroundColor: Colors.red));
+       AppToast.showError(context, 'Chyba: $e');
      }
   }
 }

@@ -4,8 +4,11 @@ import '../services/visit_data_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
+import '../services/logging_service.dart';
 import 'admin_widgets.dart';
-import 'ui/glass_ui.dart';
+import '../widgets/ui/glass_ui.dart';
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/app_toast.dart';
 
 class AdminControlTab {
   static Widget build({
@@ -324,11 +327,13 @@ class AdminControlTab {
              const SizedBox(width: 8),
 
              // Bulk Mode Toggle
-            GlassButton(
+            // Bulk Mode Toggle
+            AppButton(
               onPressed: onToggleBulkMode,
-              type: isBulkMode ? GlassButtonType.destructive : GlassButtonType.secondary,
+              text: isBulkMode ? 'Zrušit' : 'Výběr',
               icon: isBulkMode ? Icons.check_box : Icons.check_box_outline_blank,
-              child: Text(isBulkMode ? 'Zrušit' : 'Výběr'),
+              type: isBulkMode ? AppButtonType.destructiveOutline : AppButtonType.secondary,
+              size: AppButtonSize.medium,
             ),
           ],
         ),
@@ -339,20 +344,22 @@ class AdminControlTab {
           Row(
             children: [
                Expanded(
-                child: GlassButton(
+                child: AppButton(
                   onPressed: selectedVisitIds.isEmpty ? null : onBulkApprove,
-                  type: GlassButtonType.primary,
+                  text: 'Schválit (${selectedVisitIds.length})',
                   icon: Icons.check,
-                  child: Text('Schválit (${selectedVisitIds.length})'),
+                  type: AppButtonType.primary,
+                  size: AppButtonSize.medium,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: GlassButton(
+                child: AppButton(
                   onPressed: selectedVisitIds.isEmpty ? null : onBulkReject,
-                  type: GlassButtonType.destructive,
+                  text: 'Odmítnout (${selectedVisitIds.length})',
                   icon: Icons.close,
-                  child: Text('Odmítnout (${selectedVisitIds.length})'),
+                  type: AppButtonType.destructive,
+                  size: AppButtonSize.medium,
                 ),
               ),
             ],
@@ -421,18 +428,12 @@ class AdminControlTab {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppButton(
               onPressed: onAction,
-              icon: const Icon(Icons.refresh, size: 20),
-              label: Text(actionLabel),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+              text: actionLabel,
+              icon: Icons.refresh,
+              type: AppButtonType.primary,
+              size: AppButtonSize.medium,
             ),
           ],
         ),
@@ -572,14 +573,7 @@ class AdminControlTab {
       onRefresh();
       
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Návštěva byla schválena'),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
+        AppToast.showSuccess(context, 'Návštěva byla schválena');
       }
     }
   }
@@ -668,14 +662,8 @@ class AdminControlTab {
       onRefresh();
       
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Návštěva byla odmítnuta'),
-            backgroundColor: const Color(0xFFEF4444),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        );
+        // Red toast for rejection action
+        AppToast.showError(context, 'Návštěva byla odmítnuta');
       }
     }
   }

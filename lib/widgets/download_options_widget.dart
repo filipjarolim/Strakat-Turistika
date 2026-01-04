@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/download_options_service.dart';
 import '../services/mapy_cz_download_service.dart';
+import '../widgets/ui/app_toast.dart';
 
 /// Widget for choosing download options
 class DownloadOptionsWidget extends StatefulWidget {
@@ -278,21 +279,11 @@ class _DownloadOptionsWidgetState extends State<DownloadOptionsWidget> {
       
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Spuštěno ${DownloadOptionsService.getDownloadConfig(_selectedOption)['name']}'),
-            backgroundColor: const Color(0xFF4CAF50),
-          ),
-        );
+        AppToast.showSuccess(context, 'Spuštěno ${DownloadOptionsService.getDownloadConfig(_selectedOption)['name']}');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Nepodařilo se spustit stahování: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppToast.showError(context, 'Nepodařilo se spustit stahování: $e');
       }
     } finally {
       if (mounted) {

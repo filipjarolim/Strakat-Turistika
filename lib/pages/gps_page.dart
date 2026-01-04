@@ -19,6 +19,7 @@ import 'package:strakataturistikaandroidapp/services/mapy_cz_download_service.da
 import 'package:strakataturistikaandroidapp/services/tracking_state_service.dart';
 import 'package:strakataturistikaandroidapp/services/haptic_service.dart';
 import 'package:strakataturistikaandroidapp/services/logging_service.dart';
+import 'package:strakataturistikaandroidapp/widgets/ui/app_toast.dart';
 
 import 'package:strakataturistikaandroidapp/models/visit_data.dart';
 import 'package:strakataturistikaandroidapp/models/tracking_summary.dart';
@@ -32,6 +33,7 @@ import 'package:strakataturistikaandroidapp/pages/visit_data_form_page.dart';
 
 import 'package:strakataturistikaandroidapp/config/app_colors.dart';
 import 'package:strakataturistikaandroidapp/widgets/ui/glass_ui.dart';
+import 'package:strakataturistikaandroidapp/widgets/ui/app_button.dart';
 import 'package:strakataturistikaandroidapp/widgets/gps/tracking_bottom_sheet.dart';
 
 class GpsPage extends StatefulWidget {
@@ -375,16 +377,17 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
           title: const Text('Spustit sledování'),
           content: const Text('Opravdu chcete spustit GPS sledování?'),
           actions: [
-            TextButton(
+            AppButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Zrušit'),
+              text: 'Zrušit',
+              type: AppButtonType.ghost,
+              size: AppButtonSize.small,
             ),
-            TextButton(
+            AppButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF4CAF50),
-              ),
-              child: const Text('Spustit'),
+              text: 'Spustit',
+              type: AppButtonType.primary,
+              size: AppButtonSize.small,
             ),
           ],
         );
@@ -413,18 +416,18 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                 'Klikněte na "Zapnout GPS" a v nastavení aktivujte polohu.',
               ),
               actions: [
-                TextButton(
+                AppButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Zrušit'),
+                  text: 'Zrušit',
+                  type: AppButtonType.ghost,
+                  size: AppButtonSize.small,
                 ),
-                ElevatedButton.icon(
+                AppButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  icon: const Icon(Icons.location_on),
-                  label: const Text('Zapnout GPS'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                  ),
+                  text: 'Zapnout GPS',
+                  icon: Icons.location_on,
+                  type: AppButtonType.primary,
+                  size: AppButtonSize.small,
                 ),
               ],
             );
@@ -463,16 +466,17 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
           title: const Text('Zastavit sledování'),
           content: const Text('Opravdu chcete zastavit GPS sledování?'),
           actions: [
-            TextButton(
+            AppButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Zrušit'),
+              text: 'Zrušit',
+              type: AppButtonType.ghost,
+              size: AppButtonSize.small,
             ),
-            TextButton(
+            AppButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-              child: const Text('Zastavit'),
+              text: 'Zastavit',
+              type: AppButtonType.destructive,
+              size: AppButtonSize.small,
             ),
           ],
         );
@@ -604,7 +608,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(p.icon, color: const Color(0xFF4CAF50)),
@@ -982,34 +986,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
       _mapController.move(_currentLocation!, 16.0);
       _bounceController.forward().then((_) => _bounceController.reverse());
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.center_focus_strong, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  '📍 Vycentrováno na vaši polohu',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF2E7D32),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(12),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      AppToast.showSuccess(context, 'Vycentrováno na vaši polohu');
     }
   }
   
@@ -1058,85 +1035,9 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
     }
   }
   
-  double _calculateDistance(LatLng point1, LatLng point2) {
-    return GpsUtils.calculateDistance(point1, point2);
-  }
 
-  // Floating action helper
-  Widget _floatingAction({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
-    return GlassCard(
-      borderRadius: 16,
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(color: color, fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // Large floating action for start/stop button
-  Widget _largeFloatingAction({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
-    return GlassCard(
-      borderRadius: 20,
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: color, 
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  // Mark point flow
-  void _showMarkPointSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        builder: (_, controller) => _MarkPointEditor(
-          controller: controller,
-          onSaved: (place) {
-            // Integrate with summary/form via visit form page
-            final summary = _trackingStateService.getSummary();
-            Navigator.of(ctx).pop();
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => VisitDataFormPage(
-                  trackingSummary: summary,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1221,7 +1122,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                                       width: 60,
                                       height: 60,
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(0.3),
+                                        color: AppColors.primary.withValues(alpha: 0.3),
                                         shape: BoxShape.circle,
                                       ),
                                     ),
@@ -1243,7 +1144,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                                     border: Border.all(color: Colors.white, width: 3),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.3),
+                                        color: Colors.black.withValues(alpha: 0.3),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
@@ -1266,7 +1167,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                           strokeWidth: 5,
                           color: AppColors.primary,
                           borderStrokeWidth: 2,
-                          borderColor: Colors.white.withOpacity(0.8),
+                          borderColor: Colors.white.withValues(alpha: 0.8),
                         ),
                       ],
                     ),
@@ -1332,8 +1233,8 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withOpacity(0.9),
-                        Colors.white.withOpacity(0.0),
+                        Colors.white.withValues(alpha: 0.6),
+                        Colors.white.withValues(alpha: 0.0),
                       ],
                     ),
                   ),
@@ -1574,12 +1475,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                         // Refresh tiles to leverage fresh cache
                         _mapController.move(_mapController.camera.center, _mapController.camera.zoom);
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Offline dlaždice se stahují na pozadí'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                          AppToast.showInfo(context, 'Offline dlaždice se stahují na pozadí');
                         }
                       },
                     ),
@@ -1592,9 +1488,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                         Navigator.of(ctx).pop();
                         // Simple selection: use current view with wider margins as preset
                         if (!_isOnline) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Offline: nelze stahovat')), 
-                          );
+                          AppToast.showError(context, 'Offline: nelze stahovat');
                           return;
                         }
                         final cam = _mapController.camera;
@@ -1619,9 +1513,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                       onTap: () async {
                         await MapyCzDownloadService.clearCache();
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Cache byla vyčištěna')), 
-                          );
+                          AppToast.showSuccess(context, 'Cache byla vyčištěna');
                         }
                       },
                     ),
@@ -1673,8 +1565,8 @@ class DirectionalConePainter extends CustomPainter {
         center,
         tip,
         [
-          baseColor.withOpacity(0.6), // More transparent
-          baseColor.withOpacity(0.0),
+          baseColor.withValues(alpha: 0.6), // More transparent
+          baseColor.withValues(alpha: 0.0),
         ],
         [0.0, 1.0],
       );
@@ -1687,145 +1579,5 @@ class DirectionalConePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 } 
 
-class _MarkPointEditor extends StatefulWidget {
-  final ScrollController controller;
-  final void Function(Place) onSaved;
-  const _MarkPointEditor({required this.controller, required this.onSaved});
 
-  @override
-  State<_MarkPointEditor> createState() => _MarkPointEditorState();
-}
-
-class _MarkPointEditorState extends State<_MarkPointEditor> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descController = TextEditingController();
-  PlaceType _type = PlaceType.OTHER;
-  final List<File> _photos = [];
-
-  Future<void> _pickPhotos() async {
-    final picker = ImagePicker();
-    final images = await picker.pickMultiImage(maxWidth: 1920, maxHeight: 1080, imageQuality: 85);
-    if (images.isEmpty) return;
-    setState(() {
-      _photos.addAll(images.map((x) => File(x.path)));
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text('Zaznamenat bod', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView(
-              controller: widget.controller,
-              children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Název místa',
-                    prefixIcon: const Icon(Icons.place_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<PlaceType>(
-                  value: _type,
-                  onChanged: (v) => setState(() => _type = v ?? PlaceType.OTHER),
-                  decoration: InputDecoration(
-                    labelText: 'Typ místa',
-                    prefixIcon: const Icon(Icons.category_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  items: PlaceType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.name))).toList(),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _descController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Popis (volitelné)',
-                    prefixIcon: const Icon(Icons.description_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _pickPhotos,
-                      icon: const Icon(Icons.add_a_photo_outlined),
-                      label: const Text('Přidat fotky'),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF111827), foregroundColor: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('${_photos.length} fotek', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                if (_photos.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _photos.length,
-                      itemBuilder: (context, i) => Container(
-                        width: 100,
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE5E7EB))),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.file(_photos[i], fit: BoxFit.cover),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: () {
-                final place = Place(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: _nameController.text.trim(),
-                  type: _type,
-                  photos: _photos.asMap().entries.map((e) => PlacePhoto(
-                        id: '${DateTime.now().millisecondsSinceEpoch}_${e.key}',
-                        url: e.value.path,
-                        uploadedAt: DateTime.now(),
-                        isLocal: true,
-                        description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-                      )).toList(),
-                  description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-                  createdAt: DateTime.now(),
-                );
-                widget.onSaved(place);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: const Text('Uložit a pokračovat'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 

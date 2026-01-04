@@ -15,6 +15,7 @@ import '../widgets/image_picker_widget.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/error_recovery_service.dart';
+import '../widgets/ui/app_button.dart';
 import 'package:image_picker/image_picker.dart';
 
 class VisitDataFormPage extends StatefulWidget {
@@ -283,6 +284,73 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
     return;
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          contentPadding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+               ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                child: Image.asset(
+                  'assets/success_illustration.png',
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+               ),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Skvělá práce!',
+                      style: TextStyle(
+                        fontSize: 22, 
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Vaše návštěva byla úspěšně uložena.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: AppButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close dialog
+                  Navigator.of(context).popUntil((route) => route.isFirst); // Go to home
+                },
+                text: 'Pokračovat na přehled',
+                type: AppButtonType.primary,
+                size: AppButtonSize.medium,
+                expand: true,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showRetryDialog() {
     showDialog(
       context: context,
@@ -294,19 +362,23 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
             'Zkuste to znovu nebo pokračujte bez ukládání.'
           ),
           actions: [
-            TextButton(
+            AppButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
-              child: const Text('Zrušit'),
+              text: 'Zrušit',
+              type: AppButtonType.ghost,
+              size: AppButtonSize.small,
             ),
-            TextButton(
+            AppButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _submitVisitData();
               },
-              child: const Text('Zkusit znovu'),
+              text: 'Zkusit znovu',
+              type: AppButtonType.primary,
+              size: AppButtonSize.small,
             ),
           ],
         );
@@ -479,10 +551,7 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
 
       if (success) {
         if (mounted) {
-          _showCustomToast('✅ Data o návštěvě úspěšně uložena!', true);
-          Future.delayed(const Duration(seconds: 2), () {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          });
+          _showSuccessDialog();
         }
       } else {
         if (mounted) {
@@ -596,23 +665,13 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
         ),
         padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
         child: SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
+        child: AppButton(
             onPressed: _isSubmitting ? null : _submitVisitData, // Updated to use the correct method name
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: _isSubmitting
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text(
-                    'Uložit návštěvu',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
+            text: 'Uložit návštěvu',
+            type: AppButtonType.primary,
+            size: AppButtonSize.large,
+            expand: true,
+            isLoading: _isSubmitting,
           ),
         ),
       ),

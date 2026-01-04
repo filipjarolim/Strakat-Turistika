@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/visit_data_service.dart';
 import '../models/visit_data.dart';
+import '../widgets/ui/app_toast.dart';
 
 class UserVisitsPage extends StatefulWidget {
   final String userId;
@@ -53,12 +54,7 @@ class _UserVisitsPageState extends State<UserVisitsPage> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Chyba načítání návštěv uživatele'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppToast.showError(context, 'Chyba načítání návštěv uživatele');
       }
     }
   }
@@ -89,17 +85,20 @@ class _UserVisitsPageState extends State<UserVisitsPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.explore_off,
-                        size: 64,
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                      const SizedBox(height: 16),
+                       Opacity(
+                         opacity: 0.8,
+                         child: Image.asset(
+                          'assets/empty_state_illustration.png',
+                          height: 150,
+                        ),
+                       ),
+                      const SizedBox(height: 24),
                       Text(
                         'Uživatel zatím nemá žádné schválené návštěvy',
                         style: TextStyle(
                           fontSize: 16,
                           color: const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

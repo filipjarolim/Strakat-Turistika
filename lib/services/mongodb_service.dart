@@ -15,7 +15,7 @@ class MongoDBService {
   static const Duration _retryDelay = Duration(seconds: 2);
   
   // Database configuration
-  static const String _databaseUrl = 'mongodb+srv://jarolimfilip07:QSRNlqVjCJQW5g5F@cluster0.2x8zm.mongodb.net/strakataturistika?retryWrites=true&w=majority';
+  static const String _databaseUrl = ''; // Loaded from .env
   static const String _fallbackDatabaseUrl = 'mongodb://localhost:27017/strakataturistika';
   
   // Initialize the database connection
@@ -42,12 +42,12 @@ class MongoDBService {
       }
       
       // Get the database URL from environment variables or use a placeholder
-      final databaseUrl = dotenv.env['DATABASE_URL'] ?? 'mongodb://localhost:27017/strakataturistika';
+      final databaseUrl = dotenv.env['DATABASE_URL'];
       
-      if (databaseUrl == 'mongodb://localhost:27017/strakataturistika') {
-        print('⚠️ Using fallback database URL. Please create a .env file with your DATABASE_URL');
-        print('⚠️ App will continue without database connection - using local fallbacks');
-        _initialized = true;
+      if (databaseUrl == null || databaseUrl.isEmpty) {
+        print('❌ DATABASE_URL not found in .env');
+        print('ℹ️ Please create a .env file with your DATABASE_URL');
+        _initialized = true; // Mark as initialized to prevent loop, but DB is null
         return;
       }
       

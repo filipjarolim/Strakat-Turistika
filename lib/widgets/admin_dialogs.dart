@@ -10,6 +10,8 @@ import '../services/error_recovery_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/app_toast.dart';
 
 class AdminDialogs {
   // Visit Details Dialog
@@ -214,65 +216,45 @@ class AdminDialogs {
                     return Wrap(
                       spacing: 10,
                       runSpacing: 10,
-                          children: [
-                        OutlinedButton.icon(
+                      children: [
+                        AppButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close),
-                          label: const Text('Zavřít'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: Size(buttonMinWidth, buttonHeight),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            foregroundColor: const Color(0xFF2E7D32),
-                            side: const BorderSide(color: Color(0xFFB7E1C1)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                          text: 'Zavřít',
+                          icon: Icons.close,
+                          type: AppButtonType.outline,
+                          size: AppButtonSize.medium,
                         ),
-                        ElevatedButton.icon(
+                        AppButton(
                           onPressed: () async {
                             final ok = await VisitDataService().updateVisitDataState(visitData.id, VisitState.APPROVED);
                             if (ok && context.mounted) Navigator.of(context).pop();
                           },
-                          icon: const Icon(Icons.check_circle_outline),
-                                label: const Text('Schválit'),
-                                style: ElevatedButton.styleFrom(
-                            minimumSize: Size(buttonMinWidth, buttonHeight),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            backgroundColor: const Color(0xFF2E7D32),
-                                  foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                          text: 'Schválit',
+                          icon: Icons.check_circle_outline,
+                          type: AppButtonType.primary,
+                          size: AppButtonSize.medium,
                         ),
-                        ElevatedButton.icon(
+                        AppButton(
                           onPressed: () async {
                             final reason = await _askRejectReason(context);
                             if (reason == null) return;
                             final ok = await VisitDataService().updateVisitDataState(visitData.id, VisitState.REJECTED, rejectionReason: reason);
                             if (ok && context.mounted) Navigator.of(context).pop();
                           },
-                          icon: const Icon(Icons.cancel_outlined),
-                          label: const Text('Zamítnout'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: Size(buttonMinWidth, buttonHeight),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            backgroundColor: const Color(0xFFC62828),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                          text: 'Zamítnout',
+                          icon: Icons.cancel_outlined,
+                          type: AppButtonType.destructive,
+                          size: AppButtonSize.medium,
                         ),
-                        ElevatedButton.icon(
+                        AppButton(
                           onPressed: () async {
-                            await _showEditPointsDialog(context, visitData);
+                            await showEditPointsDialog(context, visitData);
                           },
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Upravit body'),
-                                style: ElevatedButton.styleFrom(
-                            minimumSize: Size(buttonMinWidth, buttonHeight),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                            backgroundColor: const Color(0xFF1B5E20),
-                                  foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              ),
+                          text: 'Upravit body',
+                          icon: Icons.edit_outlined,
+                          type: AppButtonType.primary,
+                          size: AppButtonSize.medium,
+                        ),
                       ],
                     );
                   }),
@@ -296,14 +278,24 @@ class AdminDialogs {
           decoration: const InputDecoration(hintText: 'Zadejte důvod (nepovinné)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Zrušit')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Potvrdit')),
+          AppButton(
+            onPressed: () => Navigator.pop(context),
+            text: 'Zrušit',
+            type: AppButtonType.ghost,
+            size: AppButtonSize.small,
+          ),
+          AppButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            text: 'Potvrdit',
+            type: AppButtonType.primary,
+            size: AppButtonSize.small,
+          ),
         ],
       ),
     );
   }
 
-  static Future<void> _showEditPointsDialog(BuildContext context, VisitData visit) async {
+  static Future<void> showEditPointsDialog(BuildContext context, VisitData visit) async {
     final pointsC = TextEditingController(text: visit.points.toStringAsFixed(1));
     final peaksC = TextEditingController(text: (visit.extraPoints['peaks'] ?? 0).toString());
     final towersC = TextEditingController(text: (visit.extraPoints['towers'] ?? 0).toString());
@@ -325,8 +317,13 @@ class AdminDialogs {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Zrušit')),
-          ElevatedButton(
+          AppButton(
+            onPressed: () => Navigator.pop(context),
+            text: 'Zrušit',
+            type: AppButtonType.ghost,
+            size: AppButtonSize.small,
+          ),
+          AppButton(
             onPressed: () async {
               final p = double.tryParse(pointsC.text.replaceAll(',', '.')) ?? visit.points;
               final pk = int.tryParse(peaksC.text) ?? 0;
@@ -335,7 +332,9 @@ class AdminDialogs {
               final ok = await VisitDataService().updateVisitDataPoints(visit.id, p, pk, tw, tr);
               if (ok && context.mounted) Navigator.pop(context);
             },
-            child: const Text('Uložit'),
+            text: 'Uložit',
+            type: AppButtonType.primary,
+            size: AppButtonSize.small,
           )
         ],
       ),
@@ -411,14 +410,15 @@ class AdminDialogs {
             alignment: Alignment.centerRight,
             child: Padding(
               padding: const EdgeInsets.only(top: 8, right: 8),
-              child: TextButton.icon(
+              child: AppButton(
                 onPressed: pts.isEmpty ? null : () {
                   final geojson = _toGeoJsonFeature(pts);
                   _openInMapyCz(geojson);
                 },
-                icon: const Icon(Icons.open_in_new, size: 16),
-                label: const Text('Otevřít v Mapy.cz'),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xFF2E7D32)),
+                text: 'Otevřít v Mapy.cz',
+                icon: Icons.open_in_new,
+                type: AppButtonType.outline,
+                size: AppButtonSize.small,
               ),
             ),
           ),
@@ -2079,13 +2079,7 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
           final targetPath = '${downloadsDir!.path}/$fileName';
           await sourceFile.copy(targetPath);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fotka uložena: $targetPath'),
-                backgroundColor: const Color(0xFF4CAF50),
-                duration: const Duration(seconds: 3),
-              ),
-            );
+            AppToast.showSuccess(context, 'Fotka uložena: $targetPath');
           }
         }
       } else {
@@ -2098,24 +2092,13 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
           final file = File(filePath);
           await file.writeAsBytes(response.bodyBytes);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fotka stažena: $filePath'),
-                backgroundColor: const Color(0xFF4CAF50),
-                duration: const Duration(seconds: 3),
-              ),
-            );
+            AppToast.showSuccess(context, 'Fotka stažena: $filePath');
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Chyba při stahování: $e'),
-            backgroundColor: const Color(0xFFE53935),
-          ),
-        );
+        AppToast.showError(context, 'Chyba při stahování: $e');
       }
     } finally {
       if (mounted) {

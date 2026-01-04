@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/tracking_summary.dart';
+import '../ui/app_button.dart';
 
 class TrackingBottomSheet extends StatelessWidget {
   final ScrollController scrollController;
@@ -46,7 +47,7 @@ class TrackingBottomSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -210,7 +211,7 @@ class TrackingBottomSheet extends StatelessWidget {
                  borderRadius: BorderRadius.circular(18),
                  boxShadow: [
                    BoxShadow(
-                     color: (isTracking ? Colors.red : AppColors.primary).withOpacity(0.3),
+                     color: (isTracking ? Colors.red : AppColors.primary).withValues(alpha: 0.3),
                      blurRadius: 12,
                      offset: const Offset(0, 4),
                    ),
@@ -237,15 +238,15 @@ class TrackingBottomSheet extends StatelessWidget {
       children: [
         Row(
           children: [
-             Expanded(child: _buildStatItem('Rychlost', '${speed.toStringAsFixed(1)}', 'km/h', Icons.speed)),
+             Expanded(child: _buildStatItem('Rychlost', speed.toStringAsFixed(1), 'km/h', Icons.speed)),
              const SizedBox(width: 12),
-             Expanded(child: _buildStatItem('Výška', '${altitude.toStringAsFixed(0)}', 'm n.m.', Icons.landscape)),
+             Expanded(child: _buildStatItem('Výška', altitude.toStringAsFixed(0), 'm n.m.', Icons.landscape)),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-             Expanded(child: _buildStatItem('Průměrná', '${avgSpeed.toStringAsFixed(1)}', 'km/h', Icons.timelapse)),
+             Expanded(child: _buildStatItem('Průměrná', avgSpeed.toStringAsFixed(1), 'km/h', Icons.timelapse)),
              // Add more stats or placeholder
              const SizedBox(width: 12),
              Expanded(child: Container()), 
@@ -316,56 +317,16 @@ class TrackingBottomSheet extends StatelessWidget {
         Expanded(child: Container()), 
         const SizedBox(width: 12),
          // Add more tools like Layer switcher if needed
-         _buildToolButton(
-          icon: Icons.stop_rounded,
-          label: 'Ukončit',
-          color: Colors.red,
-          onTap: onStopTracking,
-          isOutline: true,
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildToolButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    Color color = AppColors.primary,
-    bool isOutline = false,
-  }) {
-    return Expanded(
-      child: Material(
-        color: isOutline ? Colors.transparent : color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isOutline ? color.withOpacity(0.5) : Colors.transparent,
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
+         Expanded(
+           child: AppButton(
+            onPressed: onStopTracking,
+            text: 'Ukončit',
+            icon: Icons.stop_rounded,
+            type: AppButtonType.destructiveOutline,
+            size: AppButtonSize.medium,
           ),
-        ),
-      ),
+         ),
+      ],
     );
   }
 }

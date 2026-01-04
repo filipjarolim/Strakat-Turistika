@@ -1,0 +1,222 @@
+import 'package:flutter/material.dart';
+import '../../config/app_colors.dart';
+
+enum AppButtonType {
+  primary,
+  secondary,
+  outline,
+  ghost,
+  destructive,
+  destructiveOutline,
+}
+
+enum AppButtonSize {
+  medium,
+  large,
+  small,
+}
+
+class AppButton extends StatelessWidget {
+  final String? text;
+  final VoidCallback? onPressed;
+  final AppButtonType type;
+  final AppButtonSize size;
+  final IconData? icon;
+  final Widget? leading;
+  final bool isLoading;
+  final bool expand;
+  final double? width;
+
+  const AppButton({
+    super.key,
+    this.text,
+    required this.onPressed,
+    this.type = AppButtonType.primary,
+    this.size = AppButtonSize.medium,
+    this.icon,
+    this.leading,
+    this.isLoading = false,
+    this.expand = false,
+    this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: expand ? double.infinity : width,
+      height: _getHeight(),
+      child: _buildButton(),
+    );
+  }
+  
+  Widget _buildButton() {
+    final style = _getStyle();
+    
+    if (type == AppButtonType.outline || type == AppButtonType.destructiveOutline) {
+      return OutlinedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: style,
+        child: _buildContent(),
+      );
+    } else if (type == AppButtonType.ghost) {
+      return TextButton(
+        onPressed: isLoading ? null : onPressed,
+        style: style,
+        child: _buildContent(),
+      );
+    }
+    
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: style,
+      child: _buildContent(),
+    );
+  }
+  
+  Widget _buildContent() {
+    if (isLoading) {
+      return SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: _getContentColor(),
+        ),
+      );
+    }
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (leading != null) ...[
+          leading!,
+          const SizedBox(width: 8),
+        ] else if (icon != null) ...[
+          Icon(icon, size: _getIconSize(), color: _getContentColor()),
+          const SizedBox(width: 8),
+        ],
+        if (text != null)
+          Text(
+            text!,
+            style: TextStyle(
+              fontSize: _getFontSize(),
+              fontWeight: FontWeight.w700,
+              color: _getContentColor(),
+              letterSpacing: 0.0,
+            ),
+          ),
+      ],
+    );
+  }
+  
+  ButtonStyle _getStyle() {
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(100),
+    );
+    final padding = _getPadding();
+    
+    switch (type) {
+      case AppButtonType.primary:
+        return ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+          shape: shape,
+          padding: padding,
+        );
+      case AppButtonType.secondary:
+        return ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFF3F4F6),
+          foregroundColor: const Color(0xFF1F2937),
+          elevation: 0,
+          shape: shape,
+          padding: padding,
+        );
+      case AppButtonType.destructive:
+        return ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFEF4444),
+          foregroundColor: Colors.white,
+          elevation: 2,
+          shadowColor: const Color(0xFFEF4444).withValues(alpha: 0.4),
+          shape: shape,
+          padding: padding,
+        );
+      case AppButtonType.outline:
+        return OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF374151),
+          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.5),
+          shape: shape,
+          padding: padding,
+        );
+      case AppButtonType.destructiveOutline:
+        return OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFEF4444),
+          side: const BorderSide(color: Color(0xFFFECACA), width: 1.5),
+          shape: shape,
+          padding: padding,
+          backgroundColor: const Color(0xFFFEF2F2),
+        );
+      case AppButtonType.ghost:
+        return TextButton.styleFrom(
+          foregroundColor: const Color(0xFF4B5563),
+          shape: shape,
+          padding: padding,
+        );
+    }
+  }
+
+  Color _getContentColor() {
+    if (onPressed == null) return Colors.grey[400]!;
+    
+    switch (type) {
+      case AppButtonType.primary:
+      case AppButtonType.destructive:
+        return Colors.white;
+      case AppButtonType.secondary:
+        return const Color(0xFF1F2937);
+      case AppButtonType.outline:
+        return const Color(0xFF374151);
+      case AppButtonType.destructiveOutline:
+        return const Color(0xFFEF4444);
+      case AppButtonType.ghost:
+        return const Color(0xFF4B5563);
+    }
+  }
+  
+  double _getHeight() {
+    switch (size) {
+      case AppButtonSize.small: return 40; // Increased from 36 for better a11y
+      case AppButtonSize.medium: return 48;
+      case AppButtonSize.large: return 56;
+    }
+  }
+  
+  double _getFontSize() {
+    switch (size) {
+      case AppButtonSize.small: return 13;
+      case AppButtonSize.medium: return 15;
+      case AppButtonSize.large: return 17;
+    }
+  }
+  
+  double _getIconSize() {
+      switch (size) {
+      case AppButtonSize.small: return 16;
+      case AppButtonSize.medium: return 20;
+      case AppButtonSize.large: return 24;
+    }
+  }
+  
+  EdgeInsetsGeometry _getPadding() {
+    switch (size) {
+      case AppButtonSize.small: 
+        return const EdgeInsets.symmetric(horizontal: 16, vertical: 0);
+      case AppButtonSize.medium: 
+        return const EdgeInsets.symmetric(horizontal: 24, vertical: 0);
+      case AppButtonSize.large: 
+        return const EdgeInsets.symmetric(horizontal: 32, vertical: 0);
+    }
+  }
+}

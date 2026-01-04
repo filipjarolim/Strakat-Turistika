@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import '../services/visit_data_service.dart';
 import '../models/visit_data.dart';
 import '../widgets/tab_switch.dart';
+import '../widgets/ui/app_button.dart';
 import 'login_page.dart';
 
 class ExploreTab extends StatelessWidget {
@@ -164,22 +165,31 @@ class GreetingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          user != null ? 'Ahoj, ${user.name.split(' ')[0]}!' : 'Vítejte!',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF111827),
-            letterSpacing: -0.5,
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            user != null ? 'Ahoj, ${user.name.split(' ')[0]}!' : 'Vítejte!',
+            style: const TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              color: Colors.white, // Required for ShaderMask
+              letterSpacing: -1.0,
+              height: 1.1,
+            ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
-          'Kam vyrazíme dnes?',
+          'Připraveni na nové dobrodružství?',
           style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[500],
+            fontSize: 17,
+            color: Colors.grey[600],
             fontWeight: FontWeight.w500,
+            letterSpacing: -0.2,
           ),
         ),
       ],
@@ -195,11 +205,15 @@ class MainActionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF111827), // Dark nice contrast
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF111827).withOpacity(0.3),
+            color: const Color(0xFF2E7D32).withOpacity(0.4),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -215,42 +229,43 @@ class MainActionCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
+                const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2E7D32),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'NOVÝ VÝLET',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                    Text(
+                      'NOVÝ VÝLET',
+                      style: TextStyle(
+                        color: Color(0xFFE8F5E9),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Zaznamenat',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.0),
-                    ),
-                     const Text(
-                      'trasu',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.0),
+                    SizedBox(height: 8),
+                    Text(
+                      'Zaznamenat\ntrasu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                   ],
                 ),
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
+                    color: Colors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 4)),
                     ],
                   ),
-                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
+                  child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF2E7D32), size: 38),
                 ),
               ],
             ),
@@ -370,13 +385,15 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
               'Poslední aktivita',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 color: Color(0xFF111827),
               ),
             ),
-            GestureDetector(
-              onTap: () => TabSwitch.of(context)?.switchTo(1),
-              child: const Text('Zobrazit vše', style: TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 14)),
+            AppButton(
+              text: 'Zobrazit vše',
+              onPressed: () => TabSwitch.of(context)?.switchTo(1),
+              type: AppButtonType.ghost,
+              size: AppButtonSize.small,
             ),
           ],
         ),

@@ -116,15 +116,6 @@ class MyApp extends StatelessWidget {
       ],
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
-      // Force text scale factor to 1.0, ignoring system font size settings
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaleFactor: 1.0,
-          ),
-          child: child!,
-        );
-      },
       home: const MyHomePage(),
       routes: {
 
@@ -292,8 +283,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin, 
 
   void _onNavItemTapped(int index) async {
     if (index == _currentIndex) return;
-    // Gate GPS tab for unauthenticated users
-    if (index == 2 && AuthService.currentUser == null) {
+    // Gate GPS tab (2) and Profile tab (3) for unauthenticated users
+    if ((index == 2 || index == 3) && AuthService.currentUser == null) {
       await HapticService.lightImpact();
       if (mounted) {
         Navigator.push(

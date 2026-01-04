@@ -10,7 +10,7 @@ class CloudinaryService {
   static CloudinaryPublic get cloudinary {
     if (_cloudinary == null) {
       _cloudinary = CloudinaryPublic(
-        dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'ddbnzysrm',
+        dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '',
         'ffenzeso', // Use your existing unsigned preset
         cache: false,
       );
@@ -71,7 +71,8 @@ class CloudinaryService {
 
   // Try multiple upload presets
   static Future<String?> _tryMultiplePresets(File imageFile) async {
-    final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'ddbnzysrm';
+    final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'];
+    if (cloudName == null) return null;
     final presets = ['ffenzeso', 'ml_default', 'strakataturistika', 'unsigned'];
     
     for (final preset in presets) {
@@ -108,9 +109,14 @@ class CloudinaryService {
     try {
       print('🔄 Trying API key upload method...');
       
-      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'ddbnzysrm';
-      final apiKey = dotenv.env['CLOUDINARY_API_KEY'] ?? '181657171792589';
-      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET'] ?? 'uYSlsPpGl0gJyxqbpWFGeqYFRfo';
+      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'];
+      final apiKey = dotenv.env['CLOUDINARY_API_KEY'];
+      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET'];
+
+      if (cloudName == null || apiKey == null || apiSecret == null) {
+        print('❌ Cloudinary credentials missing in .env');
+        return null;
+      }
       
       // Read the image file
       final bytes = await imageFile.readAsBytes();
@@ -154,9 +160,13 @@ class CloudinaryService {
     try {
       print('🔄 Trying upload without preset...');
       
-      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'ddbnzysrm';
-      final apiKey = dotenv.env['CLOUDINARY_API_KEY'] ?? '181657171792589';
-      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET'] ?? 'uYSlsPpGl0gJyxqbpWFGeqYFRfo';
+      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'];
+      final apiKey = dotenv.env['CLOUDINARY_API_KEY'];
+      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET'];
+      
+      if (cloudName == null || apiKey == null || apiSecret == null) {
+         return null;
+      }
       
       // Read the image file
       final bytes = await imageFile.readAsBytes();

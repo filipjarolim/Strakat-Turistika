@@ -15,6 +15,9 @@ import '../widgets/admin_utils.dart';
 import '../widgets/admin_utils.dart';
 import '../services/admin_services.dart';
 import '../widgets/ui/glass_ui.dart';
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/app_toast.dart';
+import 'admin/system_overview_page.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
@@ -135,14 +138,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
   }
 
   Future<void> _openVisitDetails(VisitData visit) async {
-    try {
-      final full = await _visitDataService.getVisitById(visit.id);
-      if (!mounted) return;
-      await AdminDialogs.showVisitDetailsDialog(context, full ?? visit);
-    } catch (_) {
-      if (!mounted) return;
-      await AdminDialogs.showVisitDetailsDialog(context, visit);
-    }
+    await _showRouteDetailsSheet(visit);
   }
 
   Future<void> _loadScoringConfig() async {
@@ -615,39 +611,21 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     required String actionLabel,
     required VoidCallback onAction,
   }) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: SnackBarAction(label: actionLabel, onPressed: onAction),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+    AppToast.showSuccess(
+      context, 
+      message,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
   // Utility methods
   void _showErrorSnackBar(String message) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red[600],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppToast.showError(context, message);
   }
 
   void _showSuccessSnackBar(String message) {
-        ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green[600],
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    AppToast.showSuccess(context, message);
   }
 
   void _showManagePlaceTypesSheet() {
@@ -973,205 +951,245 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
             alignment: Alignment.bottomCenter,
             child: Container(
               height: MediaQuery.of(ctx).size.height * 0.9,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.95), // Slightly translucent
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20, // Soft shadow
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Glass effect
-                  child: Column(
-                    children: [
-                      // Handle bar
-                      Container(
-                        margin: const EdgeInsets.only(top: 12),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+              child: Column(
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      // Header
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(visit.state).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getStatusIcon(visit.state),
+                            color: _getStatusColor(visit.state),
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                visit.routeTitle ?? visit.visitedPlaces,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A1A1A),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                visit.displayName ?? 'Neznámý uživatel',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Detailed info chips
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              _buildDetailChip(Icons.calendar_today, _formatDate(visit.visitDate), Colors.blue),
+                              _buildDetailChip(Icons.star, '${visit.points} bodů', Colors.amber),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          if (visit.routeDescription != null && visit.routeDescription!.isNotEmpty) ...[
+                            Text('Poznámka', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                            const SizedBox(height: 8),
                             Container(
-                              width: 56,
-                              height: 56,
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(visit.state).withOpacity(0.1),
-                                shape: BoxShape.circle,
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[300]!),
                               ),
-                              child: Icon(
-                                _getStatusIcon(visit.state),
-                                color: _getStatusColor(visit.state),
-                                size: 28,
+                              child: Text(visit.routeDescription!, style: const TextStyle(fontSize: 14)),
+                            ),
+                          ],
+                          
+                          // Check for screenshots or map data
+                           if (hasRoute) ...[
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Mapa trasy',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    visit.routeTitle ?? visit.visitedPlaces, // Correct property
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1A1A1A),
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 250,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: FlutterMap(
+                                  options: MapOptions(
+                                    initialCenter: const LatLng(50.0755, 14.4378), // Default center
+                                    initialZoom: 13,
+                                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    visit.displayName ?? 'Neznámý uživatel',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
+                                  children: [
+                                    TileLayer(
+                                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                      userAgentPackageName: 'cz.strakata.turistika',
                                     ),
-                                  ),
-                                ],
+                                    // TODO: Add actual route polyline decoding here
+                                  ],
+                                ),
+                            ),
+                          ] else if (isScreenshot && firstPhoto != null) ...[
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Snímek trasy',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
                               ),
                             ),
-                            // Action Buttons
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 300,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Image.network(
+                                firstPhoto['url'] ?? '',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Actions Footer
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (visit.state == VisitState.PENDING_REVIEW) ...[
                             Row(
                               children: [
-                                if (visit.state == VisitState.PENDING_REVIEW) ...[
-                                  IconButton(
+                                Expanded(
+                                  child: AppButton(
                                     onPressed: () {
                                       Navigator.pop(ctx);
                                       _approveVisit(visit.id);
                                     },
-                                    icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 32),
-                                    tooltip: 'Schválit',
+                                    text: 'Schválit',
+                                    icon: Icons.check_circle_outline,
+                                    type: AppButtonType.primary,
+                                    size: AppButtonSize.large,
                                   ),
-                                  IconButton(
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: AppButton(
                                     onPressed: () {
                                       Navigator.pop(ctx);
                                       _rejectVisit(visit.id);
                                     },
-                                    icon: const Icon(Icons.cancel, color: Color(0xFFEF4444), size: 32),
-                                    tooltip: 'Odmítnout',
+                                    text: 'Zamítnout',
+                                    icon: Icons.cancel_outlined,
+                                    type: AppButtonType.destructive,
+                                    size: AppButtonSize.large,
                                   ),
-                                ],
+                                ),
                               ],
                             ),
+                            const SizedBox(height: 12),
                           ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      // Content
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Detailed info chips
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                children: [
-                                  _buildDetailChip(Icons.calendar_today, _formatDate(visit.visitDate), Colors.blue),
-                                  _buildDetailChip(Icons.star, '${visit.points} bodů', Colors.amber),
-                                  // Removed invalid location chip
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              
-                              if (visit.routeDescription != null && visit.routeDescription!.isNotEmpty) ...[
-                                Text('Poznámka', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700])),
-                                const SizedBox(height: 8),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey[300]!),
-                                  ),
-                                  child: Text(visit.routeDescription!, style: const TextStyle(fontSize: 14)),
-                                ),
-                              ],
-                              
-                              // Check for screenshots or map data
-                               if (hasRoute) ...[
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'Mapa trasy',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF111827),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  height: 250,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: FlutterMap(
-                                      options: MapOptions(
-                                        initialCenter: const LatLng(50.0755, 14.4378), // Default center
-                                        initialZoom: 13,
-                                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
-                                      ),
-                                      children: [
-                                        TileLayer(
-                                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                          userAgentPackageName: 'cz.strakata.turistika',
-                                        ),
-                                        // TODO: Add actual route polyline decoding here
-                                      ],
-                                    ),
-                                ),
-                              ] else if (isScreenshot && firstPhoto != null) ...[
-                                const SizedBox(height: 24),
-                                const Text(
-                                  'Snímek trasy',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF111827),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  height: 300,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Image.network(
-                                    firstPhoto['url'] ?? '',
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
-                                  ),
-                                ),
-                              ],
-                            ],
+                          AppButton(
+                            onPressed: () async {
+                              // We can close manual sheet or keep it open?
+                              // Dialog logic usually pops dialog.
+                              // Let's call the dialog helper for editing points
+                              await AdminDialogs.showEditPointsDialog(context, visit);
+                              // Refresh logic? Dialog updates DB.
+                              // We might need to refresh the list after edit.
+                            },
+                            text: 'Upravit body',
+                            icon: Icons.edit_outlined,
+                            type: AppButtonType.secondary,
+                            size: AppButtonSize.medium,
+                            expand: true,
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -1325,9 +1343,11 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                GlassButton(
+                AppButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Zpět'),
+                  text: 'Zpět',
+                  type: AppButtonType.secondary,
+                  size: AppButtonSize.medium,
                 ),
               ],
             ),
@@ -1345,6 +1365,15 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
             leading: IconButton(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.arrow_back, size: 24, color: Color(0xFF1A1A1A)),
+            ),
+            trailing: IconButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SystemOverviewPage()),
+                );
+              },
+              icon: const Icon(Icons.info_outline, size: 24, color: Color(0xFF1A1A1A)),
+              tooltip: 'System Overview',
             ),
           ),
           
@@ -2300,23 +2329,13 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
               ),
               child: SafeArea(
                 child: Center(
-                  child: ElevatedButton.icon(
+                  child: AppButton(
                     onPressed: _isDownloading ? null : _downloadPhoto,
-                    icon: _isDownloading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.download, size: 20),
-                    label: Text(_isDownloading ? 'Stahování...' : 'Stáhnout fotku'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      elevation: 8,
-                    ),
+                    text: _isDownloading ? 'Stahování...' : 'Stáhnout fotku',
+                    icon: _isDownloading ? null : Icons.download,
+                    type: AppButtonType.primary,
+                    size: AppButtonSize.medium,
+                    isLoading: _isDownloading,
                   ),
                 ),
               ),

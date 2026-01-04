@@ -4,6 +4,7 @@ import '../services/scoring_config_service.dart';
 import '../models/place_type_config.dart';
 import 'admin_widgets.dart';
 import 'ui/glass_ui.dart';
+import 'ui/app_button.dart';
 class AdminFormTab {
   static Widget build({
     required List<form_service.FormField> formFields,
@@ -72,11 +73,11 @@ class AdminFormTab {
                         ),
                       ),
                     ),
-                    GlassButton(
+                    AppButton(
                       onPressed: () => onScoringExpandedChanged(!isScoringExpanded),
-                      type: GlassButtonType.secondary,
+                      type: AppButtonType.secondary,
                       icon: isScoringExpanded ? Icons.expand_less : Icons.expand_more,
-                      child: const SizedBox.shrink(), // Icon only
+                      size: AppButtonSize.small,
                     ),
                   ],
                 ),
@@ -121,18 +122,21 @@ class AdminFormTab {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          GlassButton(
+                          AppButton(
                             onPressed: savingScoring ? null : onSaveScoring,
-                            type: GlassButtonType.primary,
+                            text: savingScoring ? 'Ukládání...' : 'Uložit bodování',
                             icon: savingScoring ? null : Icons.save,
-                            child: Text(savingScoring ? 'Ukládání...' : 'Uložit bodování'),
+                            type: AppButtonType.primary,
+                            size: AppButtonSize.medium,
+                            isLoading: savingScoring,
                           ),
                           const SizedBox(width: 12),
-                          GlassButton(
+                          AppButton(
                             onPressed: onPreview,
-                            type: GlassButtonType.secondary,
+                            text: 'Náhled',
                             icon: Icons.preview,
-                            child: const Text('Náhled'),
+                            type: AppButtonType.secondary,
+                            size: AppButtonSize.medium,
                           ),
                         ],
                       ),
@@ -168,18 +172,19 @@ class AdminFormTab {
                         ),
                       ),
                     ),
-                    GlassButton(
+                    AppButton(
                       onPressed: onAddField,
-                      type: GlassButtonType.primary,
+                      text: 'Přidat',
                       icon: Icons.add,
-                      child: const Text('Přidat'),
+                      type: AppButtonType.primary,
+                      size: AppButtonSize.small,
                     ),
                     const SizedBox(width: 8),
-                    GlassButton(
+                    AppButton(
                       onPressed: () => onFormFieldsExpandedChanged(!isFormFieldsExpanded),
-                      type: GlassButtonType.secondary,
+                      type: AppButtonType.secondary,
                       icon: isFormFieldsExpanded ? Icons.expand_less : Icons.expand_more,
-                      child: const SizedBox.shrink(),
+                      size: AppButtonSize.small,
                     ),
                   ],
                 ),
@@ -255,11 +260,13 @@ class AdminFormTab {
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          GlassButton(
+                          AppButton(
                             onPressed: savingForm ? null : onSaveForm,
-                            type: GlassButtonType.primary,
+                            text: savingForm ? 'Ukládání...' : 'Uložit formulář',
                             icon: savingForm ? null : Icons.save,
-                            child: Text(savingForm ? 'Ukládání...' : 'Uložit formulář'),
+                            type: AppButtonType.primary,
+                            size: AppButtonSize.medium,
+                            isLoading: savingForm,
                           ),
                         ],
                       ),
@@ -297,11 +304,11 @@ class AdminFormTab {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GlassButton(
+                    AppButton(
                       onPressed: () => onPlaceTypesExpandedChanged(!isPlaceTypesExpanded),
-                      type: GlassButtonType.secondary,
+                      type: AppButtonType.secondary,
                       icon: isPlaceTypesExpanded ? Icons.expand_less : Icons.expand_more,
-                      child: const SizedBox.shrink(),
+                      size: AppButtonSize.small,
                     ),
                   ],
                 ),

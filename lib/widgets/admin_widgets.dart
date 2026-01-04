@@ -4,6 +4,7 @@ import '../models/visit_data.dart';
 import '../services/scoring_config_service.dart';
 import '../models/place_type_config.dart';
 import '../services/form_field_service.dart' as form_service;
+import 'ui/app_button.dart';
 
 class AdminWidgets {
   // Modern Loading Widget
@@ -80,19 +81,11 @@ class AdminWidgets {
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
+              AppButton(
                 onPressed: onAction,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  elevation: 0,
-                ),
-                child: Text(
-                  actionLabel,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                text: actionLabel,
+                type: AppButtonType.primary,
+                size: AppButtonSize.medium,
               ),
             ],
           ],
@@ -139,19 +132,11 @@ class AdminWidgets {
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
+              AppButton(
                 onPressed: onAction,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[600],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  elevation: 0,
-                ),
-                child: Text(
-                  actionLabel,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                text: actionLabel,
+                type: AppButtonType.destructive,
+                size: AppButtonSize.medium,
               ),
             ],
           ],
@@ -380,11 +365,13 @@ class AdminWidgets {
           Row(
             children: [
               Expanded(
-                child: GlassButton(
+                child: AppButton(
                   onPressed: onShowDetails,
-                  type: GlassButtonType.secondary,
+                  text: 'Zobrazit detaily',
                   icon: Icons.visibility_outlined,
-                  child: const Text('Zobrazit detaily'),
+                  type: AppButtonType.secondary,
+                  size: AppButtonSize.medium,
+                  expand: true,
                 ),
               ),
             ],
@@ -632,11 +619,12 @@ class AdminWidgets {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GlassButton(
+              AppButton(
                 onPressed: onEdit,
-                type: GlassButtonType.secondary,
+                text: 'Upravit',
                 icon: Icons.edit_outlined,
-                child: const Text('Upravit'),
+                type: AppButtonType.secondary,
+                size: AppButtonSize.small,
               ),
               const SizedBox(width: 12),
               SizedBox(

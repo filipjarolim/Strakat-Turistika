@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-// Enum for button types
-enum GlassButtonType {
-  primary,
-  secondary,
-  destructive, // Renamed from danger to match legacy usage
-}
+
+
+
 
 /// Compatibility layer: Maps old Glass UI to new Standard UI
 class GlassScaffold extends StatelessWidget {
@@ -17,13 +13,13 @@ class GlassScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
 
   const GlassScaffold({
-    Key? key,
+    super.key,
     this.body,
     this.bottomNavigationBar,
     this.floatingActionButton,
     this.backgroundColor,
     this.appBar,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +44,7 @@ class GlassCard extends StatelessWidget {
   final double? borderRadius; // Added for legacy compatibility
 
   const GlassCard({
-    Key? key,
+    super.key,
     required this.child,
     this.padding,
     this.margin,
@@ -56,7 +52,7 @@ class GlassCard extends StatelessWidget {
     this.height,
     this.onTap,
     this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +66,7 @@ class GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius ?? 16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -89,117 +85,21 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-class GlassButton extends StatelessWidget {
-  final String? text; // Made optional
-  final Widget? child; // Added for legacy compatibility
-  final VoidCallback? onPressed;
-  final GlassButtonType type;
-  final IconData? icon;
-  final bool isLoading;
-
-  const GlassButton({
-    Key? key,
-    this.text,
-    this.child,
-    required this.onPressed,
-    this.type = GlassButtonType.primary,
-    this.icon,
-    this.isLoading = false,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    Color bgColor;
-    Color textColor;
-
-    switch (type) {
-      case GlassButtonType.primary:
-        bgColor = const Color(0xFF4CAF50);
-        textColor = Colors.white;
-        break;
-      case GlassButtonType.secondary:
-        bgColor = Colors.white;
-        textColor = const Color(0xFF1A1A1A);
-        break;
-      case GlassButtonType.destructive:
-        bgColor = const Color(0xFFE53935);
-        textColor = Colors.white;
-        break;
-    }
-
-    // Modern Button Style
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: textColor,
-          elevation: type == GlassButtonType.secondary ? 0 : 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: type == GlassButtonType.secondary 
-              ? BorderSide(color: Colors.grey[300]!) 
-              : BorderSide.none,
-          ),
-        ),
-        child: isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: textColor,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    if (text != null || child != null) const SizedBox(width: 8),
-                  ],
-                  if (text != null)
-                    Text(
-                      text!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  else if (child != null)
-                     // Apply text style if child is Text, via DefaultTextStyle?
-                     // Or just render child. Legacy code likely passes Text.
-                     DefaultTextStyle(
-                       style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                       ),
-                       child: child!,
-                     ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
 class GlassHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final bool center;
   final Widget? leading;
+  final Widget? trailing;
 
   const GlassHeader({
-    Key? key,
+    super.key,
     required this.title,
     this.subtitle,
     this.center = false,
     this.leading,
-  }) : super(key: key);
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,17 +128,27 @@ class GlassHeader extends StatelessWidget {
       ],
     );
 
-    if (leading != null) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
+    Widget result = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (leading != null) ...[
           leading!,
           const SizedBox(width: 16),
-          Expanded(child: content),
         ],
-      );
-    }
+        Expanded(child: content),
+        if (trailing != null) ...[
+          const SizedBox(width: 16),
+          trailing!,
+        ],
+      ],
+    );
 
-    return content;
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 12.0),
+        child: result,
+      ),
+    );
   }
 }

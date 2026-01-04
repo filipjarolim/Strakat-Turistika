@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../widgets/ui/app_toast.dart';
 
 class ImagePickerWidget extends StatefulWidget {
   final Function(List<File>) onImagesSelected;
@@ -50,7 +52,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1, maxHeight: 1);
         } catch (e) {
           // This is expected to fail, but it tests the channel connection
-          print('Channel test completed');
+          // debugPrint('Channel test completed');
         }
         
         setState(() {
@@ -58,7 +60,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         });
         return;
       } catch (e) {
-        print('Failed to initialize image picker (attempt ${retryCount + 1}): $e');
+        debugPrint('Failed to initialize image picker (attempt ${retryCount + 1}): $e');
         retryCount++;
         if (retryCount < maxRetries) {
           await Future.delayed(Duration(milliseconds: 1000 * retryCount));
@@ -74,7 +76,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
       });
       return;
     } catch (e) {
-      print('Final initialization attempt failed: $e');
+      debugPrint('Final initialization attempt failed: $e');
     }
     
     setState(() {
@@ -82,60 +84,27 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     });
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Nepodařilo se inicializovat obrázkový výběr. Zkuste restartovat aplikaci.'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'Zkusit znovu',
-            textColor: Colors.white,
-            onPressed: () => _initializePicker(),
-          ),
-        ),
+      AppToast.showError(
+        context, 
+        'Nepodařilo se inicializovat obrázkový výběr. Zkuste restartovat aplikaci.',
+        actionLabel: 'Zkusit znovu',
+        onAction: () => _initializePicker(),
       );
     }
   }
 
-  // Check if running on emulator
-  Future<bool> _isEmulator() async {
-    try {
-      const platform = MethodChannel('flutter/platform');
-      final bool isEmulator = await platform.invokeMethod('isEmulator');
-      return isEmulator;
-    } catch (e) {
-      // If we can't detect, assume it might be an emulator
-      return true;
-    }
-  }
+  // Check if running on emulator - logic removed but method kept if needed later, or remove entirely.
+  // Method _isEmulator removed as it was unused.
 
-  // Add emulator-specific workaround
-  Future<void> _showEmulatorWarning() async {
-    final bool isEmulator = await _isEmulator();
-    
-    // Always proceed silently; don't show a dialog
+  Future<void> _handleAddPhoto() async {
     _showImageSourceDialog();
   }
+  
+  // Method _reinitializePicker removed as it was unused.
 
-  Future<void> _reinitializePicker() async {
-    setState(() {
-      _isInitialized = false;
-    });
-    
-    await Future.delayed(const Duration(milliseconds: 1000));
-    await _initializePicker();
-  }
-
-
-
-    Future<void> _pickImages() async {
+  Future<void> _pickImages() async {
     if (!_isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Obrázkový výběr se ještě inicializuje. Zkuste to za chvíli znovu.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppToast.showInfo(context, 'Obrázkový výběr se ještě inicializuje. Zkuste to za chvíli znovu.');
       return;
     }
 
@@ -173,7 +142,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         widget.onImagesSelected(_selectedImages);
       }
     } catch (e) {
-      print('Image picker error: $e');
+      debugPrint('Image picker error: $e');
       
       // If multi-image fails, try single image as fallback
       try {
@@ -187,12 +156,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         if (singleImage != null) {
           if (widget.maxImages != null && _selectedImages.length >= widget.maxImages!) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Můžete přidat maximálně ${widget.maxImages} fotografií'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
+              AppToast.showInfo(context, 'Můžete přidat maximálně ${widget.maxImages} fotografií');
             }
             return;
           }
@@ -204,17 +168,11 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           widget.onImagesSelected(_selectedImages);
           
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Přidána jedna fotografie. Pro více fotek zkuste znovu.'),
-                backgroundColor: Colors.blue,
-                duration: Duration(seconds: 2),
-              ),
-            );
+            AppToast.showInfo(context, 'Přidána jedna fotografie. Pro více fotek zkuste znovu.');
           }
         }
       } catch (fallbackError) {
-        print('Fallback image picker also failed: $fallbackError');
+        debugPrint('Fallback image picker also failed: $fallbackError');
         
         // Final fallback: Show manual file picker dialog
         if (mounted) {
@@ -252,12 +210,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
   Future<void> _takePhoto() async {
     if (!_isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Obrázkový výběr se ještě inicializuje. Zkuste to za chvíli znovu.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppToast.showInfo(context, 'Obrázkový výběr se ještě inicializuje. Zkuste to za chvíli znovu.');
       return;
     }
 
@@ -274,14 +227,9 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
       if (photo != null) {
         if (widget.maxImages != null && _selectedImages.length >= widget.maxImages!) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Můžete přidat maximálně ${widget.maxImages} fotografií'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+            if (mounted) {
+              AppToast.showInfo(context, 'Můžete přidat maximálně ${widget.maxImages} fotografií');
+            }
           return;
         }
 
@@ -292,19 +240,13 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
         widget.onImagesSelected(_selectedImages);
       }
     } catch (e) {
-      print('Camera error: $e');
+      debugPrint('Camera error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Chyba při pořizování fotografie. Zkuste to znovu.'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'Zkusit znovu',
-              textColor: Colors.white,
-              onPressed: () => _takePhoto(),
-            ),
-          ),
+        AppToast.showError(
+          context, 
+          'Chyba při pořizování fotografie. Zkuste to znovu.',
+          actionLabel: 'Zkusit znovu',
+          onAction: () => _takePhoto(),
         );
       }
     }
@@ -319,18 +261,13 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
   void _showImageSourceDialog() {
     if (!_isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Obrázkový výběr se inicializuje. Zkuste to za chvíli znovu.'),
-          backgroundColor: Colors.orange,
-          action: SnackBarAction(
-            label: 'Zkusit znovu',
-            textColor: Colors.white,
-            onPressed: () {
-              _initializePicker();
-            },
-          ),
-        ),
+      AppToast.showInfo(
+        context, 
+        'Obrázkový výběr se inicializuje. Zkuste to za chvíli znovu.',
+        actionLabel: 'Zkusit znovu',
+        onAction: () {
+          _initializePicker();
+        },
       );
       return;
     }
@@ -397,7 +334,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                   ),
                 ),
                 IconButton(
-                  onPressed: _isInitialized ? _showEmulatorWarning : null,
+                  onPressed: _isInitialized ? _handleAddPhoto : null,
                   icon: _isInitialized
                       ? const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF111827))
                       : const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
@@ -435,7 +372,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(

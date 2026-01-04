@@ -9,6 +9,9 @@ import '../services/mapy_cz_download_service.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/offline_ui_bridge.dart';
 import '../widgets/ui/glass_ui.dart';
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/app_toast.dart';
+import 'webview_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -26,7 +29,7 @@ class SettingsPage extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
@@ -61,7 +64,7 @@ class SettingsPage extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 40,
-                          backgroundColor: const Color(0xFF4CAF50).withOpacity(0.1),
+                          backgroundColor: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                           backgroundImage: user?.image != null ? NetworkImage(user!.image!) : null,
                           child: user?.image == null
                               ? const Icon(Icons.person, color: Color(0xFF4CAF50), size: 40)
@@ -159,70 +162,34 @@ class SettingsPage extends StatelessWidget {
                     // Sign out button
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
-                      child: GlassCard(
-                        onTap: () async {
+                      child: AppButton(
+                        onPressed: () async {
                           await AuthService.signOut();
                           if (context.mounted) {
                             Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                           }
                         },
-                        borderRadius: 16,
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          alignment: Alignment.center,
-                          color: Colors.red.withOpacity(0.1),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.logout, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text(
-                                'Odhlásit se',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        text: 'Odhlásit se',
+                        icon: Icons.logout,
+                        type: AppButtonType.destructiveOutline,
+                        size: AppButtonSize.large,
                       ),
                     ),
                   ] else ...[
                     // Sign in button for non-authenticated users
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
-                      child: GlassCard(
-                        onTap: () {
+                      child: AppButton(
+                        onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const LoginPage()),
                           );
                         },
-                        borderRadius: 16,
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          alignment: Alignment.center,
-                          color: const Color(0xFF4CAF50).withOpacity(0.1),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.login, color: Color(0xFF4CAF50)),
-                              SizedBox(width: 8),
-                              Text(
-                                'Přihlásit se',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF4CAF50),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        text: 'Přihlásit se',
+                        icon: Icons.login,
+                        type: AppButtonType.primary,
+                        size: AppButtonSize.large,
                       ),
                     ),
                     
@@ -305,60 +272,71 @@ class SettingsPage extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      // Czech Republic center band sample preset
-                      final sw = const LatLng(48.9, 12.3);
-                      final ne = const LatLng(50.6, 16.0);
-                      await MapyCzDownloadService.downloadBounds(
-                        southwest: sw,
-                        northeast: ne,
-                        minZoom: 8,
-                        maxZoom: 12,
-                        concurrency: 24,
-                        batchSize: 800,
-                      );
-                      if (context.mounted) Navigator.of(ctx).pop();
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Stáhnout střed ČR (z8–12)'),
+                   Expanded(
+                    child: AppButton(
+                      onPressed: () async {
+                        // Czech Republic center band sample preset
+                        final sw = const LatLng(48.9, 12.3);
+                        final ne = const LatLng(50.6, 16.0);
+                        await MapyCzDownloadService.downloadBounds(
+                          southwest: sw,
+                          northeast: ne,
+                          minZoom: 8,
+                          maxZoom: 12,
+                          concurrency: 24,
+                          batchSize: 800,
+                        );
+                        if (context.mounted) Navigator.of(ctx).pop();
+                      },
+                      icon: Icons.download,
+                      text: 'Střed ČR (z8–12)',
+                      type: AppButtonType.outline,
+                    ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      // Prague area preset
-                      final sw = const LatLng(49.95, 14.15);
-                      final ne = const LatLng(50.25, 14.75);
-                      await MapyCzDownloadService.downloadBounds(
-                        southwest: sw,
-                        northeast: ne,
-                        minZoom: 10,
-                        maxZoom: 15,
-                        concurrency: 24,
-                        batchSize: 800,
-                      );
-                      if (context.mounted) Navigator.of(ctx).pop();
-                    },
-                    icon: const Icon(Icons.download),
-                    label: const Text('Praha (z10–15)'),
+                   Expanded(
+                    child: AppButton(
+                      onPressed: () async {
+                        // Prague area preset
+                        final sw = const LatLng(49.95, 14.15);
+                        final ne = const LatLng(50.25, 14.75);
+                        await MapyCzDownloadService.downloadBounds(
+                          southwest: sw,
+                          northeast: ne,
+                          minZoom: 10,
+                          maxZoom: 15,
+                          concurrency: 24,
+                          batchSize: 800,
+                        );
+                        if (context.mounted) Navigator.of(ctx).pop();
+                      },
+                      icon: Icons.download,
+                      text: 'Praha (z10–15)',
+                      type: AppButtonType.outline,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      await MapyCzDownloadService.clearCache();
-                      if (context.mounted) Navigator.of(ctx).pop();
-                    },
-                    icon: const Icon(Icons.cleaning_services_outlined),
-                    label: const Text('Vyčistit cache'),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: Colors.white),
+                  Expanded(
+                    child: AppButton(
+                      onPressed: () async {
+                        await MapyCzDownloadService.clearCache();
+                        if (context.mounted) Navigator.of(ctx).pop();
+                      },
+                      icon: Icons.cleaning_services_outlined,
+                      text: 'Vyčistit',
+                      type: AppButtonType.secondary,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Zavřít'),
+                  Expanded(
+                    child: AppButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      text: 'Zavřít',
+                      type: AppButtonType.ghost,
+                    ),
                   ),
                 ],
               ),
@@ -413,12 +391,13 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  TextButton(
+                  AppButton(
                     onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Zrušit'),
+                    text: 'Zrušit',
+                    type: AppButtonType.ghost,
                   ),
                   const Spacer(),
-                  ElevatedButton(
+                  AppButton(
                     onPressed: () async {
                       final u = AuthService.currentUser;
                       if (u == null) {
@@ -436,15 +415,15 @@ class SettingsPage extends StatelessWidget {
                       }
                       if (context.mounted) {
                         Navigator.of(ctx).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok ? '✅ Profil uložen' : '❌ Nepodařilo se uložit profil'),
-                            backgroundColor: ok ? const Color(0xFF4CAF50) : Colors.red,
-                          ),
-                        );
+                        if (ok) {
+                          AppToast.showSuccess(context, 'Profil uložen');
+                        } else {
+                          AppToast.showError(context, 'Nepodařilo se uložit profil');
+                        }
                       }
                     },
-                    child: const Text('Uložit'),
+                    text: 'Uložit',
+                    type: AppButtonType.primary,
                   ),
                 ],
               ),
@@ -468,8 +447,12 @@ class SettingsPage extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Zrušit')),
-          ElevatedButton(
+          AppButton(
+            onPressed: () => Navigator.pop(ctx),
+            text: 'Zrušit',
+            type: AppButtonType.ghost,
+          ),
+          AppButton(
             onPressed: () async {
               final newName = controller.text.trim();
               final user = AuthService.currentUser;
@@ -478,12 +461,11 @@ class SettingsPage extends StatelessWidget {
                 // ignore: use_build_context_synchronously
                 Navigator.pop(ctx);
                 // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('✅ Jméno aktualizováno')),
-                );
+                AppToast.showSuccess(context, 'Jméno aktualizováno');
               }
             },
-            child: const Text('Uložit'),
+            text: 'Uložit',
+            type: AppButtonType.primary,
           ),
         ],
       ),
@@ -575,7 +557,7 @@ class SettingsPage extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -635,7 +617,7 @@ class SettingsPage extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -695,17 +677,12 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(
+            AppButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Zrušit',
-                style: TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 16,
-                ),
-              ),
+              text: 'Zrušit',
+              type: AppButtonType.ghost,
             ),
-            ElevatedButton(
+            AppButton(
               onPressed: () async {
                 final newDogName = dogNameController.text.trim();
                 final currentUser = AuthService.currentUser;
@@ -720,15 +697,11 @@ class SettingsPage extends StatelessWidget {
                   
                   if (success) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                            content: Text(
-                              newDogName.isEmpty 
-                                ? '✅ Jméno psa odstraněno'
-                                : '✅ Jméno psa aktualizováno na "$newDogName"',
-                            ),
-                          backgroundColor: const Color(0xFF4CAF50),
-                        ),
+                      AppToast.showSuccess(
+                        context, 
+                        newDogName.isEmpty 
+                          ? 'Jméno psa odstraněno'
+                          : 'Jméno psa aktualizováno na "$newDogName"',
                       );
                       // Refresh the page to show updated dog name
                       Navigator.of(context).pushReplacement(
@@ -737,31 +710,13 @@ class SettingsPage extends StatelessWidget {
                     }
                   } else {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                            content: Text('❌ Nepodařilo se aktualizovat jméno psa'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      AppToast.showError(context, 'Nepodařilo se aktualizovat jméno psa');
                     }
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Uložit',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              text: 'Uložit',
+              type: AppButtonType.primary,
             ),
           ],
         );

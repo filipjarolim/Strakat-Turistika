@@ -10,6 +10,7 @@ import 'user_visits_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_colors.dart';
+import '../widgets/ui/app_toast.dart';
 import '../widgets/route_thumbnail.dart';
 import 'visit_data_form_page.dart';
 import '../models/tracking_summary.dart';
@@ -436,13 +437,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    AppToast.showError(context, message);
   }
 
   String _getStateText(VisitState state) {
@@ -518,48 +513,91 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F7),
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Výsledky',
-              style: TextStyle(
-                color: Color(0xFF1A1A1A),
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            if (selectedSeason != null)
-              Text(
-                'Sezóna $selectedSeason • Žebříček',
-                style: const TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
+        toolbarHeight: 70,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Žebříček',
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                  letterSpacing: -1.0,
                 ),
               ),
-          ],
+              if (selectedSeason != null)
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Sezóna $selectedSeason',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '• Nejlepší turisti',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         actions: [
-          IconButton(
+          TextButton.icon(
             onPressed: () async {
               final url = Uri.parse('https://strakataturistika.vercel.app/pravidla');
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },
-            icon: const Icon(Icons.description_outlined, color: AppColors.primary),
-            tooltip: 'Pravidla',
-          ),
-          IconButton(
-            onPressed: () => _showFilterSheet(),
-            icon: const Icon(Icons.filter_list, color: AppColors.primary),
-            tooltip: 'Filtrovat',
+            icon: const Icon(Icons.description_outlined, size: 20),
+            label: const Text('Pravidla'),
+            style: TextButton.styleFrom(
+              foregroundColor: Color(0xFF1A1A1A),
+              textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              backgroundColor: const Color(0xFFF3F4F6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
           ),
           const SizedBox(width: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: IconButton(
+              onPressed: () => _showFilterSheet(),
+              icon: Icon(Icons.filter_list, color: AppColors.primary, size: 22),
+              tooltip: 'Filtrovat',
+              style: IconButton.styleFrom(
+                padding: const EdgeInsets.all(8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -593,33 +631,35 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: const Color(0xFF2E7D32).withOpacity(0.1),
+                  blurRadius: 32,
+                  offset: const Offset(0, 16),
                 ),
               ],
             ),
             child: Icon(
-              Icons.analytics_outlined,
+              Icons.emoji_events_outlined,
               size: 64,
-              color: Colors.grey[400],
+              color: AppColors.primary.withOpacity(0.8),
             ),
           ),
           const SizedBox(height: 24),
-          Text(
-            'Žádné sezóny',
+          const Text(
+            'Žádné výsledky',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1A1A),
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Zkuste obnovit nebo přidat nové návštěvy',
+            'Buďte první a zaznamenejte svůj výlet!',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -956,57 +996,97 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          height: MediaQuery.of(context).size.height * 0.7,
+          height: MediaQuery.of(context).size.height * 0.75,
+          margin: const EdgeInsets.only(top: 64),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 40,
+                offset: Offset(0, -10),
+              ),
+            ],
           ),
           child: Column(
             children: [
+              const SizedBox(height: 12),
               Container(
                 width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 12),
+                height: 5,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        isScreenshot ? 'GPS Screenshot' : 'Náhled trasy', 
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isScreenshot ? 'GPS Screenshot' : 'Náhled trasy', 
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF111827),
+                              letterSpacing: -0.5,
+                            )
+                          ),
+                          if (!isScreenshot)
+                            const SizedBox(height: 4),
+                          if (!isScreenshot)
+                            Text(
+                              'Detail zaznamenané trasy',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                            ),
+                        ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFD700).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star, size: 14, color: Color(0xFFFFD700)),
+                          const Icon(Icons.star_rounded, size: 18, color: Color(0xFFFFD700)),
                           const SizedBox(width: 4),
-                          Text('${visit.points.toStringAsFixed(1)}'),
+                          Text(
+                            visit.points.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
               Expanded(
-                child: isScreenshot 
-                  ? _ResultsScreenshotPreview(photo: firstPhoto!)
-                  : _ResultsRoutePreview(trackPoints: track)
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: isScreenshot 
+                    ? _ResultsScreenshotPreview(photo: firstPhoto!)
+                    : _ResultsRoutePreview(trackPoints: track),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 32),
             ],
           ),
         );
@@ -1021,61 +1101,80 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             ? const Color(0xFFC0C0C0)
             : rank == 3
                 ? const Color(0xFFCD7F32)
-                : AppColors.primary;
+                : const Color(0xFFE0E0E0);
+    
+    final Color rankTextColor = rank <= 3 ? Colors.white : const Color(0xFF6B7280);
+    final Color rankBgColor = rank <= 3 ? badgeColor : Colors.transparent;
+    final BoxBorder? rankBorder = rank <= 3 ? null : Border.all(color: const Color(0xFFE5E7EB), width: 2);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF111827).withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           onTap: () => _showUserVisitsFromLeaderboard(entry),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 // Rank badge
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: badgeColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12), // Softer radius
-                    border: Border.all(color: badgeColor.withOpacity(0.3)),
+                    color: rankBgColor,
+                    shape: BoxShape.circle,
+                    border: rankBorder,
+                    boxShadow: rank <= 3 
+                      ? [BoxShadow(color: badgeColor.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))] 
+                      : null,
                   ),
                   child: Text(
                     '$rank',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: badgeColor,
+                      color: rankTextColor,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Avatar
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: const Color(0xFFF0F1F2),
-                  backgroundImage: entry.userImage != null ? NetworkImage(entry.userImage!) : null,
-                  child: entry.userImage == null
-                      ? const Icon(Icons.person, color: Color(0xFF9E9E9E))
+                const SizedBox(width: 16),
+                
+                // Avatar with premium border
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: rank <= 3 
+                      ? LinearGradient(colors: [badgeColor, badgeColor.withOpacity(0.5)], begin: Alignment.topLeft, end: Alignment.bottomRight)
                       : null,
+                  ),
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: const Color(0xFFF3F4F6),
+                    backgroundImage: entry.userImage != null ? NetworkImage(entry.userImage!) : null,
+                    child: entry.userImage == null
+                        ? Icon(Icons.person_rounded, color: Colors.grey[400], size: 24)
+                        : null,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
+                
                 // Info
                 Expanded(
                   child: Column(
@@ -1087,70 +1186,78 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A), // Dark text
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           if (entry.dogName != null && entry.dogName!.isNotEmpty)
-                            Row(
-                              children: [
-                                const Icon(Icons.pets, size: 14, color: AppColors.primary),
-                                const SizedBox(width: 4),
-                                Text(
-                                  entry.dogName!,
-                                  style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                                ),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.pets, size: 10, color: AppColors.primary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    entry.dogName!,
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
                             ),
                           if (entry.dogName != null && entry.dogName!.isNotEmpty) const SizedBox(width: 8),
-                          const Icon(Icons.calendar_today, size: 14, color: Color(0xFF9E9E9E)),
-                          const SizedBox(width: 4),
-                          Text(
-                            entry.lastVisitDate != null
-                                ? '${entry.lastVisitDate!.day}.${entry.lastVisitDate!.month}.${entry.lastVisitDate!.year}'
-                                : '—',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                          ),
+                          if (entry.visitsCount > 0)
+                            Text(
+                              '${entry.visitsCount} výletů',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey[500]),
+                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                // Points and visits
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star, color: Color(0xFFFFD700), size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${entry.totalPoints.toStringAsFixed(1)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
+                
+                // Points
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFF3F4F6)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            entry.totalPoints.toStringAsFixed(0),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF111827),
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.hiking, color: AppColors.primary, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${entry.visitsCount} návštěv',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      Text(
+                        'bodů',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey[400]),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1168,27 +1275,45 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
         SizedBox(
           height: 40,
           child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
             itemCount: availableSeasons.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final season = availableSeasons[index];
               final selected = season == selectedSeason;
-              return ChoiceChip(
-                label: Text('Sezóna $season'),
-                selected: selected,
-                labelStyle: TextStyle(
-                  color: selected ? Colors.white : const Color(0xFF1A1A1A),
-                  fontWeight: FontWeight.w600,
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                child: FilterChip(
+                  label: Text(
+                    'Sezóna $season',
+                    style: TextStyle(
+                      color: selected ? Colors.white : const Color(0xFF4B5563),
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  selected: selected,
+                  showCheckmark: false,
+                  backgroundColor: Colors.white,
+                  selectedColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100),
+                    side: BorderSide(
+                      color: selected ? Colors.transparent : Colors.grey.shade200,
+                      width: 1.5,
+                    ),
+                  ),
+                  elevation: selected ? 4 : 0,
+                  shadowColor: AppColors.primary.withOpacity(0.4),
+                  onSelected: (value) async {
+                    if (value && selectedSeason != season) {
+                      setState(() => selectedSeason = season);
+                      await _reloadForCurrentFilters(resetScroll: true);
+                    }
+                  },
                 ),
-                selectedColor: const Color(0xFF4CAF50),
-                backgroundColor: const Color(0xFFF0F1F2),
-                onSelected: (value) async {
-                  if (value && selectedSeason != season) {
-                    setState(() => selectedSeason = season);
-                    await _reloadForCurrentFilters(resetScroll: true);
-                  }
-                },
               );
             },
           ),
@@ -1626,61 +1751,104 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 40,
+              offset: Offset(0, -10),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Filtrovat výsledky',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                    letterSpacing: -0.5,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF6B7280)),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             const Text(
-              'Sezóna',
+              'Vyberte sezónu',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF374151),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 12,
+              runSpacing: 12,
               children: availableSeasons.map((season) {
                 final isSelected = season == selectedSeason;
-                return ChoiceChip(
-                  label: Text('Sezóna $season'),
-                  selected: isSelected,
-                  selectedColor: const Color(0xFF4CAF50),
-                  backgroundColor: const Color(0xFFF3F4F6),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
-                    fontWeight: FontWeight.w600,
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : Colors.white,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.grey[300]!,
+                      width: 1.5,
+                    ),
+                    boxShadow: isSelected 
+                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                      : null,
                   ),
-                  onSelected: (selected) async {
-                    if (selected && selectedSeason != season) {
-                      setState(() => selectedSeason = season);
-                      Navigator.pop(context);
-                      await _reloadForCurrentFilters(resetScroll: true);
-                    }
-                  },
+                  child: InkWell(
+                    onTap: () async {
+                      if (season != selectedSeason) {
+                        setState(() => selectedSeason = season);
+                        Navigator.pop(context);
+                        await _reloadForCurrentFilters(resetScroll: true);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(100),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Text(
+                        'Sezóna $season',
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
                 );
               }).toList(),
             ),
