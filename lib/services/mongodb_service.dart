@@ -211,7 +211,7 @@ class MongoDBService {
         return;
       }
       
-      final userCollection = _db!.collection('User');
+      final userCollection = _db!.collection('users');
       final users = await userCollection.find().take(5).toList();
       
       print('👥 === USER DATA DEBUG ===');
@@ -244,7 +244,7 @@ class MongoDBService {
         return;
       }
       
-      final accountCollection = _db!.collection('Account');
+      final accountCollection = _db!.collection('accounts');
       final accounts = await accountCollection.find().take(5).toList();
       
       print('🏦 === ACCOUNT DATA DEBUG ===');

@@ -406,7 +406,7 @@ class AuthService {
       // Normalize email to lowercase for case-insensitive search
       final normalizedEmail = email.trim().toLowerCase();
       
-      final userCollection = await MongoDBService.getCollection('User');
+      final userCollection = await MongoDBService.getCollection('users');
       if (userCollection == null) return null;
       
       final users = await userCollection.find({'email': normalizedEmail}).take(1).toList();
@@ -431,8 +431,8 @@ class AuthService {
   // Create new user
   static Future<User> _createUser(User user) async {
     try {
-      final userCollection = await MongoDBService.getCollection('User');
-      final accountCollection = await MongoDBService.getCollection('Account');
+      final userCollection = await MongoDBService.getCollection('users');
+      final accountCollection = await MongoDBService.getCollection('accounts');
       
       if (userCollection == null || accountCollection == null) {
         throw Exception('Database collections not available');
@@ -497,7 +497,7 @@ class AuthService {
   // Update user image
   static Future<void> _updateUserImage(String userId, String imageUrl) async {
     try {
-      final userCollection = await MongoDBService.getCollection('User');
+      final userCollection = await MongoDBService.getCollection('users');
       if (userCollection == null) return;
       
       await userCollection.updateOne(
@@ -519,7 +519,7 @@ class AuthService {
   // Update user dog name
   static Future<bool> updateUserDogName(String userId, String dogName) async {
     try {
-      final userCollection = await MongoDBService.getCollection('User');
+      final userCollection = await MongoDBService.getCollection('users');
       if (userCollection == null) return false;
       
       await userCollection.updateOne(
@@ -579,11 +579,16 @@ class AuthService {
             _currentUser = freshUser;
             // Update cached session with fresh data
             await _saveSessionToStorage();
-            print('✅ Session refreshed with latest data from database (new role: ${freshUser.role})');
+            print('✅ Session refreshed with latest data from database');
+            print('   - User ID: ${freshUser.id}');
+            print('   - Email: ${freshUser.email}');
+            print('   - Role: ${freshUser.role}');
           }
+        } else {
+          print('ℹ️ Session loaded but email is null');
         }
       } else {
-        print('ℹ️ No saved session found');
+        print('ℹ️ No saved session found (App needs to login)');
       }
     } catch (e) {
       print('⚠️ SharedPreferences not available (this is normal on first run): $e');

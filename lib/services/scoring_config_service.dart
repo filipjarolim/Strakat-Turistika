@@ -109,7 +109,7 @@ class ScoringConfigService {
   factory ScoringConfigService() => _instance;
   ScoringConfigService._internal();
 
-  static const String _collection = 'ScoringConfig';
+  static const String _collection = 'scoring_configs';
 
   Future<ScoringConfig> getConfig() async {
     final collection = await MongoDBService.getCollection(_collection);

@@ -124,7 +124,7 @@ class PlaceTypeConfigService {
   factory PlaceTypeConfigService() => _instance;
   PlaceTypeConfigService._internal();
 
-  static const String _collection = 'PlaceTypeConfigs';
+  static const String _collection = 'place_type_configs';
 
   Future<List<PlaceTypeConfig>> getPlaceTypeConfigs() async {
     try {

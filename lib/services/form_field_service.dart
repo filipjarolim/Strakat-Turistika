@@ -114,7 +114,7 @@ class FormFieldService {
   factory FormFieldService() => _instance;
   FormFieldService._internal();
 
-  static const String _collection = 'FormFields';
+  static const String _collection = 'form_fields';
 
   Future<List<FormField>> getFormFields({bool showInactive = false}) async {
     try {

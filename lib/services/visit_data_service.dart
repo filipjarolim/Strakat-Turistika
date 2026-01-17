@@ -9,7 +9,7 @@ class VisitDataService {
   factory VisitDataService() => _instance;
   VisitDataService._internal();
 
-  static const String _collectionName = 'VisitData';
+  static const String _collectionName = 'visits';
   static bool _indexesEnsured = false;
 
   Future<void> _ensureIndexes() async {
@@ -143,7 +143,7 @@ class VisitDataService {
         // join user info by firstUserId if present
         {
           '\$lookup': <String, Object>{
-            'from': 'User',
+            'from': 'users',
             'localField': 'firstUserId',
             'foreignField': '_id',
             'as': 'userDocs',
@@ -301,7 +301,7 @@ class VisitDataService {
         // Join with User collection to get current user names
         {
           '\$lookup': <String, Object>{
-            'from': 'User',
+            'from': 'users',
             'localField': 'userId',
             'foreignField': '_id',
             'as': 'userDocs',
@@ -603,7 +603,7 @@ class VisitDataService {
         // Join with User collection to get current user names
         {
           '\$lookup': <String, Object>{
-            'from': 'User',
+            'from': 'users',
             'localField': 'userId',
             'foreignField': '_id',
             'as': 'userDocs',
