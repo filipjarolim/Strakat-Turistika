@@ -246,6 +246,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                             _buildMenuItem(Icons.admin_panel_settings_outlined, 'Admin kontrola', () {
                               Navigator.of(context).pushNamed('/admin-review');
                             }, iconColor: Colors.purple[700]),
+                            _buildDivider(),
+                            _buildMenuItem(Icons.delete_forever_rounded, 'Resetovat aplikaci', _showResetConfirmation, iconColor: Colors.red[700]),
                           ],
                         ],
                       ),
@@ -275,7 +277,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     ),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 150),
                   ],
                 ),
               ),
@@ -1129,6 +1131,23 @@ class _UserProfilePageState extends State<UserProfilePage> {
     showDialog(context: context, builder: (c) => AlertDialog(
       title: const Text('Odhlásit se'), content: const Text('Opravdu se chcete odhlásit?'),
       actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('Zrušit')), TextButton(onPressed: () async { Navigator.pop(c); await AuthService.signOut(); if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (r) => false); }, child: const Text('Odhlásit', style: TextStyle(color: Colors.red)))],
+    ));
+  }
+
+  void _showResetConfirmation() {
+    showDialog(context: context, builder: (c) => AlertDialog(
+      title: const Text('Resetovat aplikaci'), 
+      content: const Text('Opravdu chcete vymazat všechna lokální data a nastavení? Aplikace se uvede do stavu po instalaci a budete odhlášeni.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Zrušit')), 
+        TextButton(onPressed: () async { 
+          Navigator.pop(c); 
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.clear();
+          await AuthService.signOut(); 
+          if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (r) => false); 
+        }, child: const Text('RESETOVAT', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)))
+      ],
     ));
   }
 

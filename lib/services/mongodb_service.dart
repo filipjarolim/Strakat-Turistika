@@ -119,6 +119,13 @@ class MongoDBService {
       await initialize();
       return;
     }
+
+    // Check actual connection state if possible
+    if (_db!.state != State.OPEN) {
+      print('⚠️ Database state is ${_db!.state}, reconnecting...');
+      await _reconnect();
+      return;
+    }
     
     // Check if we need to verify connection health
     final now = DateTime.now();
@@ -136,18 +143,14 @@ class MongoDBService {
         );
       } catch (e) {
         print('⚠️ Connection health check failed, attempting to reconnect: $e');
-        if (e is TimeoutException || 
-            e.toString().contains('connection') ||
-            e.toString().contains('socket') ||
-            e.toString().contains('master')) {
-          await _reconnect();
-        }
+        // Force reconnect on any health check failure
+        await _reconnect();
       }
     }
   }
   
   // Execute operation with retry logic
-  static Future<T> _executeWithRetry<T>(Future<T> Function() operation) async {
+  static Future<T> executeWithRetry<T>(Future<T> Function() operation) async {
     int attempts = 0;
     while (attempts < _maxRetries) {
       try {
@@ -157,19 +160,23 @@ class MongoDBService {
         attempts++;
         print('❌ Operation failed (attempt $attempts/$_maxRetries): $e');
         
+        // Try to reconnect on connection errors
+        final errorStr = e.toString().toLowerCase();
+        if (errorStr.contains('connection') || 
+            errorStr.contains('master') ||
+            errorStr.contains('socket') ||
+            errorStr.contains('closed') ||
+            errorStr.contains('network')) {
+          print('⚠️ Connection error detected, forcing reconnect...');
+          await _reconnect();
+        }
+
         if (attempts >= _maxRetries) {
           rethrow;
         }
         
         // Wait before retrying
         await Future.delayed(_retryDelay * attempts);
-        
-        // Try to reconnect on connection errors
-        if (e.toString().contains('connection') || 
-            e.toString().contains('master') ||
-            e.toString().contains('socket')) {
-          await _reconnect();
-        }
       }
     }
     throw Exception('Operation failed after $_maxRetries attempts');

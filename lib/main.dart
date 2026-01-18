@@ -20,7 +20,7 @@ import 'services/mongodb_service.dart';
 import 'services/auth_service.dart';
 import 'services/visit_data_service.dart';
 
-
+import 'pages/onboarding/auth_gate.dart';
 import 'pages/login_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/admin_review_page.dart';
@@ -39,6 +39,7 @@ import 'services/offline_ui_bridge.dart';
 import 'services/app_update_service.dart';
 import 'services/gps_services.dart'; // Added
 import 'services/tracking_state_service.dart'; // Added
+import 'services/vector_tile_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +82,13 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     await NotificationsService().initialize();
     
+    // Initialize VectorTileProvider for offline maps
+    try {
+      await VectorTileProvider.initialize();
+    } catch (e) {
+      print('⚠️ VectorTileProvider init failed: $e');
+    }
+    
     // Initialize GPS Tracking Service immediately (even if not on map tab)
     // This allows pre-loading location and ensures permissions are checked
     try {
@@ -116,9 +124,9 @@ class MyApp extends StatelessWidget {
       ],
       theme: AppTheme.lightTheme,
       themeMode: ThemeMode.light,
-      home: const MyHomePage(),
+      // Use AuthGate as the initial route to handle permission and auth checks
+      home: const AuthGate(),
       routes: {
-
         '/login': (context) => const LoginPage(),
         '/settings': (context) => const SettingsPage(),
         '/admin-review': (context) => const AdminReviewPage(),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/visit_data.dart';
 import '../config/app_colors.dart';
+import 'maps/shared_map_widget.dart';
 
 class RouteThumbnail extends StatelessWidget {
   final VisitData visit;
@@ -64,154 +67,134 @@ class RouteThumbnail extends StatelessWidget {
   }
 
   Widget _buildMapPreview(BuildContext context) {
-    final trackPoints = _getTrackPoints();
+    if (visit.route == null || visit.route!['trackPoints'] == null) {
+      return _buildNoMapPlaceholder();
+    }
     
+    final points = _getTrackPoints();
+    if (points.isEmpty) return _buildNoMapPlaceholder();
+
+    // Calculate bounds
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+    
+    for (var p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+    
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
+    final latSpan = maxLat - minLat;
+    final lngSpan = maxLng - minLng;
+    final maxSpan = max(latSpan, lngSpan);
+    
+    // Crude zoom estimation
+    double zoom = 13.0;
+    if (maxSpan > 1.0) zoom = 6;
+    else if (maxSpan > 0.5) zoom = 8;
+    else if (maxSpan > 0.2) zoom = 9;
+    else if (maxSpan > 0.1) zoom = 10;
+    else if (maxSpan > 0.05) zoom = 11;
+    else if (maxSpan > 0.02) zoom = 12;
+    else if (maxSpan > 0.01) zoom = 13;
+    else zoom = 14;
+
     return Container(
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F6F7), // Soft grey background for map
-        // Add a subtle grid pattern or texture? Keeping it clean.
+        color: const Color(0xFFE0E0E0),
         borderRadius: BorderRadius.only(
              topLeft: Radius.circular(borderRadius),
              topRight: Radius.circular(borderRadius),
         ),
       ),
-      child: trackPoints.isNotEmpty
-          ? ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
-              child: CustomPaint(
-                painter: RoutePainter(
-                  points: trackPoints,
-                  color: AppColors.primary,
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(borderRadius)),
+        child: IgnorePointer( // Make it non-interactive
+          child: SharedMapWidget(
+            center: LatLng(centerLat, centerLng),
+            zoom: zoom,
+            isInteractive: false,
+            polylines: [
+              Polyline(
+                points: points,
+                strokeWidth: 4.0,
+                color: AppColors.primary,
+                borderColor: Colors.white,
+                borderStrokeWidth: 1.0,
+              ),
+            ],
+            markers: [
+              Marker(
+                point: points.first,
+                width: 12,
+                height: 12,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                  ),
                 ),
-                child: Container(),
               ),
-            )
-          : Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                   Icon(Icons.map_outlined, size: 32, color: Colors.grey[400]),
-                   const SizedBox(height: 4),
-                   Text(
-                     'Bez náhledu trasy',
-                     style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                   ),
-                ],
+              Marker(
+                point: points.last,
+                width: 12,
+                height: 12,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                  ),
+                ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  List<Point<double>> _getTrackPoints() {
+  Widget _buildNoMapPlaceholder() {
+    return Container(
+      height: height,
+      width: double.infinity,
+      color: const Color(0xFFF5F6F7),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+             Icon(Icons.map_outlined, size: 32, color: Colors.grey[400]),
+             const SizedBox(height: 4),
+             Text(
+               'Bez náhledu trasy',
+               style: TextStyle(color: Colors.grey[500], fontSize: 10),
+             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<LatLng> _getTrackPoints() {
     if (visit.route == null || visit.route!['trackPoints'] == null) return [];
     
     final List<dynamic> rawPoints = visit.route!['trackPoints'];
     if (rawPoints.isEmpty) return [];
 
     return rawPoints.map((p) {
-      // Assuming structure {latitude: x, longitude: y}
-      final double lat = (p['latitude'] as num).toDouble();
-      final double lon = (p['longitude'] as num).toDouble();
-      return Point(lat, lon);
+      return LatLng(
+        (p['latitude'] as num).toDouble(),
+        (p['longitude'] as num).toDouble(),
+      );
     }).toList();
   }
 }
 
-class RoutePainter extends CustomPainter {
-  final List<Point<double>> points;
-  final Color color;
-
-  RoutePainter({required this.points, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (points.isEmpty) return;
-
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // 1. Calculate Bounds
-    double minLat = points.first.x;
-    double maxLat = points.first.x;
-    double minLon = points.first.y;
-    double maxLon = points.first.y;
-
-    for (var p in points) {
-      minLat = min(minLat, p.x);
-      maxLat = max(maxLat, p.x);
-      minLon = min(minLon, p.y);
-      maxLon = max(maxLon, p.y);
-    }
-    
-    // Add padding to bounds
-    final latSpan = maxLat - minLat;
-    final lonSpan = maxLon - minLon;
-    
-    // Avoid division by zero
-    if (latSpan == 0 || lonSpan == 0) return;
-
-    final path = Path();
-    bool first = true;
-    
-    // Apply padding (15% for better spacing)
-    final padding = 0.3;
-    final usefulWidth = size.width * (1.0 - padding);
-    final usefulHeight = size.height * (1.0 - padding);
-    final offsetX = size.width * (padding / 2);
-    final offsetY = size.height * (padding / 2);
-
-    Offset? startPoint;
-    Offset? endPoint;
-
-    for (int i = 0; i < points.length; i++) {
-      final p = points[i];
-      // Normalize
-      // Note: Latitude Y goes up, Screen Y goes down.
-      // Longitude X goes right, Screen X goes right.
-      
-      final normalizedX = (p.y - minLon) / lonSpan;
-      final normalizedY = 1.0 - (p.x - minLat) / latSpan; // Invert Y
-      
-      final screenX = offsetX + (normalizedX * usefulWidth);
-      final screenY = offsetY + (normalizedY * usefulHeight);
-      final pointOffset = Offset(screenX, screenY);
-
-      if (first) {
-        path.moveTo(screenX, screenY);
-        startPoint = pointOffset;
-        first = false;
-      } else {
-        path.lineTo(screenX, screenY);
-      }
-      
-      if (i == points.length - 1) {
-        endPoint = pointOffset;
-      }
-    }
-    
-    // Draw the Line
-    canvas.drawPath(path, paint);
-    
-    // Draw Start/End Markers
-    if (startPoint != null) {
-      // Start (Green Dot)
-      canvas.drawCircle(startPoint, 5, Paint()..color = Colors.white);
-      canvas.drawCircle(startPoint, 3, Paint()..color = Colors.green);
-    }
-    
-    if (endPoint != null) {
-      // End (Red Checkered/Flag - simplified to Red Dot)
-      canvas.drawCircle(endPoint, 5, Paint()..color = Colors.white);
-      canvas.drawCircle(endPoint, 3, Paint()..color = Colors.red);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

@@ -20,17 +20,15 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   bool _isLoading = false;
-  bool _isLogin = true;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  bool _rememberMe = false;
+  // bool _isLogin = true; // Unused
+  // bool _obscurePassword = true; // Unused
+  // bool _obscureConfirmPassword = true;  // Unused
+  // bool _rememberMe = false; // Unused
   bool _biometricAvailable = false;
   bool _isBiometricEnabled = false;
   
-  // Password strength
-  double _passwordStrength = 0.0;
-  String _passwordStrengthText = '';
-  Color _passwordStrengthColor = AppColors.textTertiary;
+  // Password strength removed
+
   
   // Animation controllers
   late AnimationController _fadeController;
@@ -44,24 +42,13 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late Animation<double> _shakeAnimation;
   late Animation<double> _successAnimation;
   
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _nameController = TextEditingController();
-  
   // Local auth
   final LocalAuthentication _localAuth = LocalAuthentication();
   
-  // Debounce timer for email validation
-  Timer? _emailValidationTimer;
-
   @override
   void initState() {
     super.initState();
     _initializeAnimations();
-    _loadSavedCredentials();
-    _setupPasswordListener();
     // Initialize biometrics and auto-trigger if possible/enabled
     _initializeBiometrics();
   }
@@ -156,72 +143,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       });
     }
   }
-  
-  Future<void> _loadSavedCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('saved_email');
-      final savedRememberMe = prefs.getBool('remember_me') ?? false;
-      
-      if (mounted && savedEmail != null && savedRememberMe) {
-        setState(() {
-          _emailController.text = savedEmail;
-          _rememberMe = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading saved credentials: $e');
-    }
-  }
-  
-  void _setupPasswordListener() {
-    _passwordController.addListener(() {
-      _updatePasswordStrength(_passwordController.text);
-    });
-  }
-  
-  void _updatePasswordStrength(String password) {
-    double strength = 0.0;
-    String text = '';
-    Color color = AppColors.textTertiary; // Default dark text, but we need light for this bg? 
-    // Actually we will use specific colors for strength regardless of theme
-    
-    if (password.isEmpty) {
-      strength = 0.0;
-      text = '';
-    } else if (password.length < 6) {
-      strength = 0.25;
-      text = 'Slabé';
-      color = const Color(0xFFFF5252); // Bright Red
-    } else if (password.length < 8) {
-      strength = 0.5;
-      text = 'Střední';
-      color = const Color(0xFFFFAB40); // Orange Accent
-    } else if (password.length < 10) {
-      strength = 0.75;
-      text = 'Silné';
-      color = const Color(0xFFFFD740); // Yellow Accent
-    } else {
-      strength = 1.0;
-      text = 'Velmi silné';
-      color = const Color(0xFF69F0AE); // Green Accent
-    }
-    
-    if (password.contains(RegExp(r'[A-Z]'))) strength += 0.1;
-    if (password.contains(RegExp(r'[a-z]'))) strength += 0.1;
-    if (password.contains(RegExp(r'[0-9]'))) strength += 0.1;
-    if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) strength += 0.1;
-    
-    strength = strength.clamp(0.0, 1.0);
-    
-    if (mounted) {
-      setState(() {
-        _passwordStrength = strength;
-        _passwordStrengthText = text;
-        _passwordStrengthColor = color;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -229,46 +150,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _slideController.dispose();
     _shakeController.dispose();
     _successController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _nameController.dispose();
-    _emailValidationTimer?.cancel();
     super.dispose();
-  }
-  
-  Future<void> _saveCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (_rememberMe) {
-        await prefs.setString('saved_email', _emailController.text);
-        await prefs.setBool('remember_me', true);
-      } else {
-        await prefs.remove('saved_email');
-        await prefs.setBool('remember_me', false);
-      }
-    } catch (e) {
-      debugPrint('Error saving credentials: $e');
-    }
   }
   
   Future<void> _toggleBiometric() async {
     if (!_biometricAvailable) return;
-    
     try {
       final prefs = await SharedPreferences.getInstance();
       final newValue = !_isBiometricEnabled;
-      
       await prefs.setBool('biometric_enabled', newValue);
-      
       if (mounted) {
         setState(() {
           _isBiometricEnabled = newValue;
         });
       }
-      
       HapticService.lightImpact();
-      
       if (newValue) {
         AppToast.showSuccess(context, 'Biometrické přihlášení povoleno');
       } else {
@@ -287,14 +183,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         localizedReason: 'Přihlaste se pomocí biometrie',
       );
       
+      // If biometric succeeds, we need a way to sign in.
+      // But standard biometric usually unlocks credentials.
+      // Since we only do Google now, biometrics might just be "Unlock the app session" 
+      // IF the session token matches.
+      // Ideally Google Sign-In maintains the session.
+      // So this biometric might just be "Verify it's me before I click continue".
+      // But `_signInWithGoogle` technically requires user interaction or silent sign in.
+      
       if (isAuthenticated) {
-        final prefs = await SharedPreferences.getInstance();
-        final savedEmail = prefs.getString('saved_email');
-        
-        if (savedEmail != null) {
-          _emailController.text = savedEmail;
-          await _signInWithCredentials();
-        }
+         // Attempt silent sign-in or just proceed to Google
+         _signInWithGoogle();
       }
     } catch (e) {
       // Don't show error if user canceled
@@ -313,81 +212,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     _successController.forward().then((_) => _successController.reverse());
     AppToast.showSuccess(context, message);
   }
-  
-  Future<void> _validateEmail(String email) async {
-    _emailValidationTimer?.cancel();
-    _emailValidationTimer = Timer(const Duration(milliseconds: 500), () async {
-      if (email.isEmpty || !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-        return;
-      }
-      // Future expansion: check if email exists
-    });
-  }
-
-  Future<void> _signInWithCredentials() async {
-    if (!_formKey.currentState!.validate()) {
-      HapticService.heavyImpact();
-      _shakeController.forward().then((_) => _shakeController.reverse());
-      return;
-    }
-    
-    setState(() => _isLoading = true);
-    HapticService.mediumImpact();
-
-    try {
-      final result = await AuthService.signInWithCredentials(
-        _emailController.text,
-        _passwordController.text,
-      );
-      
-      if (result.success && result.user != null) {
-        await _saveCredentials();
-        if (mounted) {
-          _showSuccess('Vítejte zpět, ${result.user!.name}!');
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-        }
-      } else {
-        _showError(result.error ?? 'Přihlášení selhalo');
-      }
-    } catch (e) {
-      _showError('Chyba: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _signUpWithCredentials() async {
-    if (!_formKey.currentState!.validate()) {
-       HapticService.heavyImpact();
-      _shakeController.forward().then((_) => _shakeController.reverse());
-      return;
-    }
-    
-    setState(() => _isLoading = true);
-    HapticService.mediumImpact();
-
-    try {
-      final result = await AuthService.signUpWithCredentials(
-        _emailController.text,
-        _passwordController.text,
-        _nameController.text,
-      );
-      
-      if (result.success && result.user != null) {
-        await _saveCredentials();
-        if (mounted) {
-          _showSuccess('Vítejte, ${result.user!.name}!');
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-        }
-      } else {
-        _showError(result.error ?? 'Registrace selhala');
-      }
-    } catch (e) {
-      _showError('Chyba: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -397,55 +221,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       final result = await AuthService.signInWithGoogle();
       
       if (result.success && result.user != null) {
-        await _saveCredentials();
         if (mounted) {
-          _showSuccess('Vítejte zpět, ${result.user!.name}!');
+          // Navigate to home quietly to avoid SnackBar animation crash on dispose
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       } else {
-        _showError(result.error ?? 'Google přihlášení selhalo');
+        if (mounted) {
+          _showError(result.error ?? 'Google přihlášení selhalo');
+        }
       }
     } catch (e) {
-      _showError('Chyba: $e');
+      if (mounted) {
+        _showError('Chyba: $e');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
-    }
-  }
-  
-  Future<void> _forgotPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      _showError('Zadejte email pro obnovení hesla');
-      return;
-    }
-    // ... basic validation ...
-    
-    // Show glass dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.7),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          content: const Row(
-            children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(width: 16),
-              Text('Odesílám email...', style: TextStyle(color: Colors.white)),
-            ],
-          ),
-        ),
-      ),
-    );
-    
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (mounted) {
-      Navigator.of(context).pop();
-      _showSuccess('Email pro obnovení hesla byl odeslán na $email');
     }
   }
 
@@ -463,7 +253,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           ),
           
-          // 2. Dark Gradient Overlay (copied from Home to ensure match)
+          // 2. Dark Gradient Overlay (stronger for better text legibility)
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -471,270 +261,115 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.60),
+                    Colors.black.withOpacity(0.30),
                     Colors.black.withOpacity(0.50),
-                    Colors.black.withOpacity(0.60),
-                    Colors.black.withOpacity(0.80), 
+                    Colors.black.withOpacity(0.70),
+                    Colors.black.withOpacity(0.90), 
                   ],
                 ),
               ),
             ),
           ),
           
-          // 3. Content Scrollable Area
+          // 3. Content
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: _slideAnimation,
-                child: Center(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Back Button
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: AnimatedBuilder(
-                            animation: _shakeAnimation,
-                            builder: (context, child) {
-                              return Transform.translate(
-                                offset: Offset(_shakeAnimation.value * 10 * (_shakeAnimation.value - 0.5), 0),
-                                child: IconButton(
-                                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                                  onPressed: () => Navigator.of(context).pop(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end, // Push content to bottom/center
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Spacer(), 
+                      
+                      // Logo or Title
+                      // Assuming an app logo exists, if not using text
+                      Container(
+                         padding: const EdgeInsets.all(16),
+                         decoration: BoxDecoration(
+                           color: Colors.white.withOpacity(0.1),
+                           shape: BoxShape.circle,
+                           border: Border.all(color: Colors.white.withOpacity(0.2)),
+                         ),
+                         child: const Icon(Icons.pets, size: 60, color: Colors.white), 
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      
+                      const Text(
+                        'Strakatá Turistika',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -1.0,
+                          height: 1.1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Objevujte nová místa se svým psem a zaznamenávejte společná dobrodružství.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.8),
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      const Spacer(),
+                      
+                      // Social Login Only
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.2)),
+                            ),
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildGlassSocialButton(
+                                  text: 'Pokračovat s Google',
+                                  iconPath: 'assets/google_logo.png',
+                                  onPressed: _signInWithGoogle,
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 20),
-                        
-                        // Header Text
-                        Text(
-                          _isLogin ? 'Vítejte zpět!' : 'Vytvořit účet',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _isLogin ? 'Přihlaste se a pokračujte v objevování' : 'Přidejte se k nám a začněte dobrodružství',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        
-                        const SizedBox(height: 40),
-                        
-                        // Glass Container Form
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(30),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                                decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.35), // Darker but clearer
-                                borderRadius: BorderRadius.circular(32),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.08),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 10),
-                                  ),
+                                
+                                // Biometric button if available
+                                if (_biometricAvailable) ...[
+                                  const SizedBox(height: 16),
+                                  _buildGlassBiometricButton(),
                                 ],
-                              ),
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                children: [
-                                  // Toggle Tabs
-                                  _buildGlassTabs(),
-                                  const SizedBox(height: 32),
-                                  
-                                  Form(
-                                    key: _formKey,
-                                    child: Column(
-                                      children: [
-                                        if (!_isLogin) ...[
-                                          _buildGlassField(
-                                            controller: _nameController,
-                                            label: 'Celé jméno',
-                                            icon: Icons.person_outline_rounded,
-                                            validator: (v) => v!.length < 2 ? 'Jméno je příliš krátké' : null,
-                                          ),
-                                          const SizedBox(height: 16),
-                                        ],
-                                        
-                                        _buildGlassField(
-                                          controller: _emailController,
-                                          label: 'Email',
-                                          icon: Icons.email_outlined,
-                                          keyboardType: TextInputType.emailAddress,
-                                          onChanged: _validateEmail,
-                                          validator: (v) => !v!.contains('@') ? 'Neplatný email' : null,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        
-                                        _buildGlassField(
-                                          controller: _passwordController,
-                                          label: 'Heslo',
-                                          icon: Icons.lock_outline_rounded,
-                                          obscureText: _obscurePassword,
-                                          toggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
-                                          validator: (v) => v!.length < 6 ? 'Heslo musí mít alespoň 6 znaků' : null,
-                                        ),
-                                        
-                                        if (_passwordController.text.isNotEmpty && !_isLogin)
-                                          _buildPasswordStrength(),
-                                          
-                                        if (!_isLogin) ...[
-                                          const SizedBox(height: 16),
-                                          _buildGlassField(
-                                            controller: _confirmPasswordController,
-                                            label: 'Potvrdit heslo',
-                                            icon: Icons.lock_reset_rounded,
-                                            obscureText: _obscureConfirmPassword,
-                                            toggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                                            validator: (v) => v != _passwordController.text ? 'Hesla se neshodují' : null,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  
-                                  const SizedBox(height: 24),
-                                  
-                                  // Login Actions (Remember Me / Forgot Password)
-                                  if (_isLogin)
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            SizedBox(
-                                              height: 24,
-                                              width: 24,
-                                              child: Checkbox(
-                                                value: _rememberMe,
-                                                onChanged: (v) {
-                                                  HapticService.lightImpact();
-                                                  setState(() => _rememberMe = v!);
-                                                },
-                                                fillColor: WidgetStateProperty.resolveWith((states) => 
-                                                  states.contains(WidgetState.selected) ? AppColors.primary : Colors.white.withOpacity(0.3)
-                                                ),
-                                                side: BorderSide(color: Colors.white.withOpacity(0.6), width: 1.5),
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              'Zapamatovat',
-                                              style: TextStyle(color: Colors.white, fontSize: 13),
-                                            ),
-                                          ],
-                                        ),
-                                        GestureDetector(
-                                          onTap: _forgotPassword,
-                                          child: Text(
-                                            'Zapomenuté heslo?',
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(0.9),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    
-                                  const SizedBox(height: 32),
-                                  
-                                  // Main Action Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 56,
-                                    child: ElevatedButton(
-                                      onPressed: _isLoading 
-                                        ? null 
-                                        : (_isLogin ? _signInWithCredentials : _signUpWithCredentials),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        foregroundColor: Colors.white,
-                                        elevation: 8,
-                                        shadowColor: AppColors.primary.withOpacity(0.5),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      ),
-                                      child: _isLoading 
-                                        ? const SizedBox(
-                                            height: 24, 
-                                            width: 24, 
-                                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)
-                                          )
-                                        : Text(
-                                            _isLogin ? 'Přihlásit se' : 'Registrovat se',
-                                            style: const TextStyle(
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                    ),
-                                  ),
-                                  
-                                  const SizedBox(height: 24),
-                                  
-                                  // Divider
-                                  Row(
-                                    children: [
-                                      Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        child: Text(
-                                          'nebo',
-                                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
-                                        ),
-                                      ),
-                                      Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
-                                    ],
-                                  ),
-                                  
-                                  const SizedBox(height: 24),
-                                  
-                                  // Social Login
-                                  _buildGlassSocialButton(
-                                    text: 'Pokračovat s Google',
-                                    iconPath: 'assets/google_logo.png',
-                                    onPressed: _signInWithGoogle,
-                                  ),
-                                  
-                                  if (_isLogin && _biometricAvailable) ...[
-                                    const SizedBox(height: 16), 
-                                    _buildGlassBiometricButton(),
-                                  ]
-                                ],
-                              ),
+                              ],
                             ),
                           ),
                         ),
-                        
-                        const SizedBox(height: 40),
-                      ],
-                    ),
+                      ),
+                      
+                      const SizedBox(height: 48),
+                      
+                      // Terms and Conditions text
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Text(
+                          'Pokračováním souhlasíte s našimi Podmínkami použití a Zásadami ochrany osobních údajů.',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -747,149 +382,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   // --- Glass Widgets ---
 
-  Widget _buildGlassTabs() {
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        children: [
-          _buildTabItem(title: 'Přihlášení', isSelected: _isLogin, onTap: () => setState(() => _isLogin = true)),
-          _buildTabItem(title: 'Registrace', isSelected: !_isLogin, onTap: () => setState(() => _isLogin = false)),
-        ],
-      ),
-    );
-  }
+  // --- Glass Widgets ---
 
-  Widget _buildTabItem({required String title, required bool isSelected, required VoidCallback onTap}) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticService.lightImpact();
-          onTap();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white.withOpacity(0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              fontSize: 15,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGlassField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    VoidCallback? toggleObscure,
-    Function(String)? onChanged,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          onChanged: onChanged,
-          validator: validator,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
-          cursorColor: AppColors.primary,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white.withOpacity(0.08), 
-            prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7), size: 22),
-            suffixIcon: toggleObscure != null 
-              ? IconButton(
-                  icon: Icon(
-                    obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                    color: Colors.white.withOpacity(0.7),
-                    size: 22,
-                  ),
-                  onPressed: toggleObscure,
-                )
-              : null,
-            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.transparent),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
-            ),
-            errorStyle: const TextStyle(color: Color(0xFFFF8A80)),
-          ),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildPasswordStrength() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: _passwordStrength,
-                backgroundColor: Colors.white.withOpacity(0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(_passwordStrengthColor), 
-                minHeight: 4,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            _passwordStrengthText,
-            style: TextStyle(
-              color: _passwordStrengthColor,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   
   Widget _buildGlassSocialButton({
     required String text,

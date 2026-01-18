@@ -675,8 +675,8 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             child: ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemCount: _items.length + 1,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
+              itemCount: _items.isEmpty ? 1 : _items.length + 1,
               itemBuilder: (context, index) {
                 if (index < _items.length) {
                   return _buildResultCard(_items[index]);
@@ -688,6 +688,15 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                 if (!_hasMore && _items.isNotEmpty) {
                   return _buildEndOfList();
                 }
+                
+                // If list is completely empty AND we are not initially loading (handled by _buildInitialSkeleton), show empty state inside the list
+                if (_items.isEmpty && !_isInitialLoading && !_isLoadingMore) {
+                  return SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: _buildEmptyState(),
+                  );
+                }
+                
                 return const SizedBox.shrink();
               },
             ),
@@ -706,14 +715,23 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             child: ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              itemCount: _leaders.length + 1,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
+              itemCount: _leaders.isEmpty ? 1 : _leaders.length + 1,
               itemBuilder: (context, index) {
                 if (index < _leaders.length) {
                   return _buildLeaderCard(index + 1, _leaders[index]);
                 }
                 if (_isLoadingMore) return _buildLoadMoreSkeleton();
                 if (!_hasMore && _leaders.isNotEmpty) return _buildEndOfList();
+                
+                 // Empty state for leaderboard
+                if (_leaders.isEmpty && !_isInitialLoading && !_isLoadingMore) {
+                   return SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: _buildEmptyState(),
+                  );
+                }
+                
                 return const SizedBox.shrink();
               },
             ),

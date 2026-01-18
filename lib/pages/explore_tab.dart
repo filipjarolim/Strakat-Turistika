@@ -68,7 +68,7 @@ class ExploreTab extends StatelessWidget {
                 ],
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 100),
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 150),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -130,26 +130,7 @@ class ExploreTab extends StatelessWidget {
           ),
           
           // Profile Icon (Floating)
-           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 16,
-            child: Material(
-              color: Colors.white.withOpacity(0.2),
-              shape: const CircleBorder(),
-              child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => TabSwitch.of(context)?.switchTo(3),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
-                    ),
-                    child: const Icon(Icons.person, color: Colors.white, size: 24),
-                  ),
-              ),
-            ),
-          ),
+
         ],
       ),
     );

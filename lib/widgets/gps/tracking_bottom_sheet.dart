@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/tracking_summary.dart';
 import '../ui/app_button.dart';
+import '../../pages/visit_data_form_page.dart';
 
 class TrackingBottomSheet extends StatelessWidget {
   final ScrollController scrollController;
@@ -14,6 +15,7 @@ class TrackingBottomSheet extends StatelessWidget {
   final VoidCallback onStopTracking;
   final VoidCallback onCenterMap;
   final double sheetPosition; // 0.0 to 1.0 approx, to drive animations
+  final VoidCallback? onClose;
   final double? currentSpeed;
   final double? currentAltitude;
 
@@ -30,6 +32,7 @@ class TrackingBottomSheet extends StatelessWidget {
     required this.onStopTracking,
     required this.onCenterMap,
     this.sheetPosition = 0.0,
+    this.onClose,
   });
 
   @override
@@ -62,64 +65,99 @@ class TrackingBottomSheet extends StatelessWidget {
             physics: const ClampingScrollPhysics(), // Prevent overscroll bounce at top
             children: [
                // Grip handle area
-               Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 8),
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
+               // Grip handle area or Close button
+               _buildDragHandleOrCloseButton(),
               
               const SizedBox(height: 4),
               
               // Collapsed Header View (Always visible/pinned logic handled by layout or just first item)
               _buildCompactHeader(context),
               
-              // Expanded Content (Stats Grid, Tools)
-              // We can wrap this in Opacity or AnimatedOpacity based on sheet height if we had it directly,
-              // or just let it scroll into view. 
-              // For "smooth approach", nice transition is better.
-              // Since we are inside DraggableScrollableSheet builder, we rely on having enough content to scroll.
+              // Expanded Content (Stats Grid, Tools, Manual Entry)
+              // We use sheetPosition to animate opacity
+              // 0.18 -> 0.5 expand creates space for this content
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32), // Increased padding to prevent header cut-off by drag handle
               
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Statistiky',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: (sheetPosition > 0.25) ? 1.0 : 0.0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Statistiky',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStatsGrid(),
-                    
-                    const SizedBox(height: 32),
-                    
-                    Text(
-                      'Nástroje mapy',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                      const SizedBox(height: 16),
+                      _buildStatsGrid(),
+                      
+                      const SizedBox(height: 32),
+                      
+                      // Manual Entry Button - Only visible when fully expanded (approx > 0.9)
+                      AnimatedContainer(
+                         duration: const Duration(milliseconds: 300),
+                         height: (sheetPosition > 0.9) ? 60 : 0,
+                         margin: EdgeInsets.only(bottom: (sheetPosition > 0.9) ? 32 : 0),
+                         child: SingleChildScrollView(
+                           physics: const NeverScrollableScrollPhysics(),
+                           child: AnimatedOpacity(
+                             duration: const Duration(milliseconds: 300),
+                             opacity: (sheetPosition > 0.9) ? 1.0 : 0.0,
+                             child: SizedBox(
+                               height: 60,
+                               width: double.infinity,
+                               child: AppButton(
+                                  text: 'Zadat aktivitu ručně',
+                                  icon: Icons.edit_note,
+                                  type: AppButtonType.secondary,
+                                  onPressed: () {
+                                    final defaultSummary = TrackingSummary(
+                                      isTracking: false,
+                                      startTime: DateTime.now(),
+                                      duration: const Duration(minutes: 0),
+                                      totalDistance: 0.0,
+                                      averageSpeed: 0.0,
+                                      maxSpeed: 0.0,
+                                      totalElevationGain: 0.0,
+                                      totalElevationLoss: 0.0,
+                                      minAltitude: null,
+                                      maxAltitude: null,
+                                      trackPoints: [],
+                                    );
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => VisitDataFormPage(trackingSummary: defaultSummary),
+                                      ),
+                                    );
+                                  },
+                               ),
+                             ),
+                           ),
+                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildMapTools(context),
-                    
-                    const SizedBox(height: 100), // Bottom padding for scroll
-                  ],
+                      
+                      Text(
+                        'Nástroje mapy',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildMapTools(context),
+                      
+                      const SizedBox(height: 100), // Bottom padding for scroll
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -135,98 +173,124 @@ class TrackingBottomSheet extends StatelessWidget {
   }
 
   Widget _buildCompactHeader(BuildContext context) {
-    // The "Pill" look
-    final duration = summary?.duration ?? Duration.zero;
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-    final seconds = duration.inSeconds % 60;
-    final distanceKm = (summary?.totalDistance ?? 0) / 1000;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
-        children: [
-          // Main Stat (Time or Distance)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isTracking ? 'Probíhá záznam' : 'Připraveno',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      isTracking 
-                          ? '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}'
-                          : '00:00:00',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      height: 24,
-                      width: 1,
-                      color: Colors.grey[300],
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${distanceKm.toStringAsFixed(2)} km',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // Action Button
-          GestureDetector(
-             onTap: onToggleTracking,
-             child: AnimatedContainer(
-               duration: const Duration(milliseconds: 300),
-               width: 56,
-               height: 56,
-               decoration: BoxDecoration(
-                 color: isTracking 
-                    ? (isPaused ? Colors.orange : Colors.red)
-                    : AppColors.primary,
-                 borderRadius: BorderRadius.circular(18),
-                 boxShadow: [
-                   BoxShadow(
-                     color: (isTracking ? Colors.red : AppColors.primary).withValues(alpha: 0.3),
-                     blurRadius: 12,
-                     offset: const Offset(0, 4),
-                   ),
-                 ],
-               ),
-               child: Icon(
-                 isTracking ? (isPaused ? Icons.play_arrow : Icons.pause) : Icons.play_arrow,
-                 color: Colors.white,
-                 size: 28,
-               ),
+    // Dynamic transition between "Start Tracking" big button and "Active Tracking" pill
+    return AnimatedCrossFade(
+      duration: const Duration(milliseconds: 400),
+      crossFadeState: isTracking ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      // First Child: Big "Start Tracking" Button
+      firstChild: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton.icon(
+             key: const ValueKey('start_button'),
+             onPressed: onToggleTracking,
+             icon: const Icon(Icons.play_arrow_rounded, size: 28),
+             label: const Text(
+               'Spustit sledování',
+               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+             ),
+             style: ElevatedButton.styleFrom(
+               backgroundColor: AppColors.primary,
+               foregroundColor: Colors.white,
+               elevation: 4,
+               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
              ),
           ),
-        ],
+        ),
+      ),
+      // Second Child: Active Tracking Pill with Stats + Small Action Button
+      secondChild: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: Row(
+          key: const ValueKey('active_pill'),
+          children: [
+            // Main Stat (Time or Distance)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Probíhá záznam',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _formatDuration(summary?.duration ?? Duration.zero),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        height: 24,
+                        width: 1,
+                        color: Colors.grey[300],
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${((summary?.totalDistance ?? 0) / 1000).toStringAsFixed(2)} km',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            // Action Button (Pause/Resume)
+            GestureDetector(
+               onTap: onToggleTracking,
+               child: AnimatedContainer(
+                 duration: const Duration(milliseconds: 300),
+                 width: 56,
+                 height: 56,
+                 decoration: BoxDecoration(
+                   color: isPaused ? Colors.orange : Colors.red,
+                   borderRadius: BorderRadius.circular(18),
+                   boxShadow: [
+                     BoxShadow(
+                       color: (isPaused ? Colors.orange : Colors.red).withValues(alpha: 0.3),
+                       blurRadius: 12,
+                       offset: const Offset(0, 4),
+                     ),
+                   ],
+                 ),
+                 child: Icon(
+                   isPaused ? Icons.play_arrow : Icons.pause,
+                   color: Colors.white,
+                   size: 28,
+                 ),
+               ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final hours = d.inHours.toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
   }
   
   Widget _buildStatsGrid() {
@@ -314,19 +378,51 @@ class TrackingBottomSheet extends StatelessWidget {
     return Row(
       children: [
         // "Centrovat" button removed as it is already on the map
-        Expanded(child: Container()), 
-        const SizedBox(width: 12),
-         // Add more tools like Layer switcher if needed
-         Expanded(
-           child: AppButton(
-            onPressed: onStopTracking,
-            text: 'Ukončit',
-            icon: Icons.stop_rounded,
-            type: AppButtonType.destructiveOutline,
-            size: AppButtonSize.medium,
+        const Spacer(),
+        if (isTracking)
+          Expanded(
+            child: AppButton(
+              onPressed: onStopTracking,
+              text: 'Ukončit',
+              icon: Icons.stop_rounded,
+              type: AppButtonType.destructiveOutline,
+              size: AppButtonSize.medium,
+            ),
           ),
-         ),
       ],
+    );
+  }
+
+  Widget _buildDragHandleOrCloseButton() {
+    final showClose = sheetPosition > 0.8;
+    
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      child: Center(
+        child: AnimatedCrossFade(
+          duration: const Duration(milliseconds: 300),
+          crossFadeState: showClose ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          secondChild: GestureDetector(
+            onTap: onClose,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 20, color: Colors.black54),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -157,6 +157,57 @@ class SettingsPage extends StatelessWidget {
                       ],
                     ),
                     
+                    if (user.role == 'ADMIN') ...[
+                      const SizedBox(height: 32),
+                      _buildSettingsSection(
+                        title: 'Admin Zóna',
+                        items: [
+                          _buildSettingsItem(
+                            icon: Icons.delete_forever,
+                            title: 'Resetovat aplikaci',
+                            subtitle: 'Vymaže všechna data a odhlásí se',
+                            onTap: () async {
+                               // Show confirmation
+                               final confirm = await showDialog<bool>(
+                                 context: context,
+                                 builder: (ctx) => AlertDialog(
+                                   title: const Text('Resetovat aplikaci?'),
+                                   content: const Text(
+                                     'Opravdu chcete vymazat všechna lokální data a nastavení? '
+                                     'Aplikace se uvede do stavu po instalaci a budete odhlášeni.'
+                                   ),
+                                   actions: [
+                                     TextButton(
+                                       onPressed: () => Navigator.pop(ctx, false),
+                                       child: const Text('Zrušit'),
+                                     ),
+                                     TextButton(
+                                       onPressed: () => Navigator.pop(ctx, true),
+                                       style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                       child: const Text('Resetovat'),
+                                     ),
+                                   ],
+                                 ),
+                               );
+
+                               if (confirm == true && context.mounted) {
+                                 // Clear everything
+                                 final prefs = await SharedPreferences.getInstance();
+                                 await prefs.clear();
+                                 
+                                 // Sign out
+                                 await AuthService.signOut();
+                                 
+                                 if (context.mounted) {
+                                   Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                                 }
+                               }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                    
                     const SizedBox(height: 32),
                     
                     // Sign out button
@@ -195,6 +246,8 @@ class SettingsPage extends StatelessWidget {
                     
                     const SizedBox(height: 24),
                     
+                    const SizedBox(height: 24),
+                    
                     _buildSettingsSection(
                       title: 'Aplikace',
                       items: [
@@ -213,6 +266,8 @@ class SettingsPage extends StatelessWidget {
                         ),
                       ],
                     ),
+
+
                   ],
                 ],
               ),

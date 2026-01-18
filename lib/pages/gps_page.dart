@@ -35,6 +35,8 @@ import 'package:strakataturistikaandroidapp/config/app_colors.dart';
 import 'package:strakataturistikaandroidapp/widgets/ui/glass_ui.dart';
 import 'package:strakataturistikaandroidapp/widgets/ui/app_button.dart';
 import 'package:strakataturistikaandroidapp/widgets/gps/tracking_bottom_sheet.dart';
+import 'package:strakataturistikaandroidapp/widgets/gps/tracking_onboarding_sheet.dart';
+import '../widgets/maps/shared_map_widget.dart';
 
 class GpsPage extends StatefulWidget {
   const GpsPage({super.key});
@@ -107,12 +109,19 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
   final LatLng _userPosition = const LatLng(49.8175, 15.4730); // Default to Czech Republic center
   double _currentZoom = 8.0;
   
+  // Location stream for passive updates
+  StreamSubscription<Position>? _positionStreamSub;
+  
   // Map state persistence
   static LatLng? _lastMapCenter;
   static double? _lastMapZoom;
   
   // Tracking pause state
   bool _isPaused = false;
+
+  // Sheet state
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
+  double _sheetExtent = 0.18;
 
   @override
   void initState() {
@@ -135,6 +144,10 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
         });
       }
     });
+    
+    // Start passive location updates immediately
+    _startPassiveLocationUpdates();
+
     _dlProgressSub = MapyCzDownloadService.progressStream.listen((m) {
       if (mounted) {
         setState(() {
@@ -144,22 +157,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
       }
     });
     
-    // Explicitly fetch current location for passive map centering
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        final pos = await Geolocator.getCurrentPosition(
-            timeLimit: const Duration(seconds: 3));
-        if (mounted && pos != null) {
-          setState(() {
-            _currentLocation = LatLng(pos.latitude, pos.longitude);
-            if (!_hasInitiallyCentered && _isMapReady) {
-              _mapController.move(_currentLocation!, 15.0);
-              _hasInitiallyCentered = true;
-            }
-          });
-        }
-      } catch (_) {}
-    });
+
   }
   
   void _initializeAnimations() {
@@ -188,6 +186,49 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
 
 
   
+
+  
+  Future<void> _startPassiveLocationUpdates() async {
+    // Check permissions without requesting them aggressively yet
+    final status = await GpsServices.checkPermissionsStatus();
+    final hasLocation = status['location'] ?? false;
+    
+    if (hasLocation) {
+      _positionStreamSub?.cancel();
+      try {
+        _positionStreamSub = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 5,
+          ),
+        ).listen((Position position) {
+          if (!mounted) return;
+          
+          // Only update local state if NOT tracking (tracking service handles source of truth then)
+          if (!_trackingStateService.isTracking) {
+             setState(() {
+               _currentLocation = LatLng(position.latitude, position.longitude);
+               _currentHeading = position.heading;
+               _currentAltitude = position.altitude;
+               // Speed is usually 0 if stationary, but we can capture it
+               _currentSpeed = position.speed;
+               
+               // Center map if not centered yet
+               if (!_hasInitiallyCentered && _isMapReady) {
+                 _smoothMoveToLocation(_currentLocation!);
+                 _hasInitiallyCentered = true;
+               }
+             });
+          }
+        }, onError: (e) {
+          print('Passive location stream error: $e');
+        });
+      } catch (e) {
+        print('Failed to start passive location: $e');
+      }
+    }
+  }
+
   void _startUpdateTimer() {
     _updateTimer = Timer.periodic(const Duration(milliseconds: 300), (timer) {
       if (mounted) {
@@ -354,6 +395,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
     _coverageDebounce?.cancel();
     _dlProgressSub?.cancel();
     _dlStateSub?.cancel();
+    _positionStreamSub?.cancel();
 
 
 
@@ -364,6 +406,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
       fadeController: _fadeController,
       bounceController: _bounceController,
       scaleController: _scaleController,
+      panelSlideController: _panelSlideController,
     );
     super.dispose();
   }
@@ -395,65 +438,47 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
     );
     
     if (confirmed == true) {
-      // Check if GPS is enabled first
+      // 1. Check if GPS service is enabled
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        // Show GPS settings dialog
-        final openSettings = await showDialog<bool>(
+        GpsServices.showGPSDisabledDialog(context); // Helper we kept/refactored
+        return;
+      }
+      
+      // 2. Check permissions status
+      final status = await GpsServices.checkPermissionsStatus();
+      bool allGranted = (status['location'] ?? false) && (status['background'] ?? false) && (status['battery_granted'] ?? false);
+      
+      if (!allGranted) {
+        // Show SIMPLIFIED Onboarding Sheet
+        final result = await showModalBottomSheet<bool>(
           context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.location_off, color: Colors.red, size: 28),
-                  SizedBox(width: 12),
-                  Expanded(child: Text('GPS je vypnuto')),
-                ],
-              ),
-              content: const Text(
-                'Pro trackování trasy musíte zapnout GPS služby na vašem zařízení.\n\n'
-                'Klikněte na "Zapnout GPS" a v nastavení aktivujte polohu.',
-              ),
-              actions: [
-                AppButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  text: 'Zrušit',
-                  type: AppButtonType.ghost,
-                  size: AppButtonSize.small,
-                ),
-                AppButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  text: 'Zapnout GPS',
-                  icon: Icons.location_on,
-                  type: AppButtonType.primary,
-                  size: AppButtonSize.small,
-                ),
-              ],
-            );
-          },
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => const TrackingOnboardingSheet(),
         );
         
-        if (openSettings == true) {
-          // Open location settings
-          await Geolocator.openLocationSettings();
+        // If sheet returns true (user clicked "Hotovo" or auto-closed), 
+        // we check one last time just to be sure, then valid = true
+        if (result == true) {
+           final finalStatus = await GpsServices.checkPermissionsStatus();
+           if ((finalStatus['location'] ?? false) && (finalStatus['background'] ?? false) && (finalStatus['battery_granted'] ?? false)) {
+             allGranted = true;
+           }
+        } else {
+          // User cancelled the wizard
+          return;
         }
-        return; // Don't start tracking if GPS is off
       }
       
-      // GPS is enabled, proceed with tracking
-      
-      // Show Pre-Permission Dialog to guide user about "Always Allow"
-      final prePermissionGranted = await GpsServices.showPrePermissionDialog(context);
-      if (!prePermissionGranted) {
-        return; // User cancelled
+      // 3. Start tracking if permissions are good
+      if (allGranted) {
+        await GpsServices.startTracking(
+          trackingStateService: _trackingStateService,
+          context: context,
+          onSuccess: () => _pulseController.repeat(reverse: true),
+        );
       }
-      
-      await GpsServices.startTracking(
-        trackingStateService: _trackingStateService,
-        context: context,
-        onSuccess: () => _pulseController.repeat(reverse: true),
-      );
     }
   }
   
@@ -1059,14 +1084,11 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
           extendBodyBehindAppBar: true,
           body: Stack(
             children: [
-              FlutterMap(
+              SharedMapWidget(
                 mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _lastMapCenter ?? const LatLng(49.8175, 15.4730),
-                  initialZoom: _lastMapZoom ?? 8.0,
-                  minZoom: 6.0,
-                  maxZoom: 18.0,
-                  onMapReady: () {
+                center: _lastMapCenter ?? const LatLng(49.8175, 15.4730),
+                zoom: _lastMapZoom ?? 8.0,
+                onMapReady: () {
                     _isMapReady = true;
                     _isMapLoading = false;
                     _currentZoom = _mapController.camera.zoom;
@@ -1075,8 +1097,8 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                       _hasInitiallyCentered = true;
                     }
                     _updateCacheCoverage();
-                  },
-                  onPositionChanged: (MapPosition position, bool hasGesture) {
+                },
+                onPositionChanged: (MapPosition position, bool hasGesture) {
                     final newZoom = position.zoom ?? _mapController.camera.zoom;
                     if (newZoom != _currentZoom) {
                        _currentZoom = newZoom;
@@ -1089,126 +1111,81 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                     // Save map state
                     _lastMapCenter = position.center;
                     _lastMapZoom = position.zoom;
-                  },
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  ),
-                ),
-                children: [
-                  TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'cz.strakata.turistika.strakataturistikaandroidapp',
-                  ),
-                  if (_currentLocation != null)
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: _currentLocation!,
-                          width: 60,
-                          height: 60,
-                          child: GestureDetector(
-                            onTap: () {
-                              _pulseController.forward(from: 0.0);
-                              HapticService.selectionClick();
-                            },
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // Show pulse if tracking OR if we want to show 'alive' state
-                                if (_trackingStateService.isTracking)
-                                  ScaleTransition(
-                                    scale: _pulseAnimation,
-                                    child: Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.3),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                if (_currentHeading != null)
-                                  Transform.rotate(
-                                    angle: (_currentHeading! * (3.14159 / 180)),
-                                    child: CustomPaint(
-                                      size: const Size(100, 100),
-                                      painter: DirectionalConePainter(),
-                                    ),
-                                  ),
-                                Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 3),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
+                },
+                markers: _currentLocation != null ? [
+                  Marker(
+                    point: _currentLocation!,
+                    width: 60,
+                    height: 60,
+                    child: GestureDetector(
+                      onTap: () {
+                        _pulseController.forward(from: 0.0);
+                        HapticService.selectionClick();
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (_trackingStateService.isTracking)
+                            ScaleTransition(
+                              scale: _pulseAnimation,
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          if (_currentHeading != null)
+                            Transform.rotate(
+                              angle: (_currentHeading! * (3.14159 / 180)),
+                              child: CustomPaint(
+                                size: const Size(100, 100),
+                                painter: DirectionalConePainter(),
+                              ),
+                            ),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  if (_trackingStateService.isTracking && _trackingStateService.getSummary().trackPoints.isNotEmpty)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _trackingStateService.getSummary().trackPoints
-                              .map((p) => p.toLatLng())
-                              .toList(),
-                          strokeWidth: 5,
-                          color: AppColors.primary,
-                          borderStrokeWidth: 2,
-                          borderColor: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ],
+                  ),
+                ] : [],
+                polylines: (_trackingStateService.isTracking && _trackingStateService.getSummary().trackPoints.isNotEmpty) ? [
+                   Polyline(
+                      points: _trackingStateService.getSummary().trackPoints
+                          .map((p) => p.toLatLng())
+                          .toList(),
+                      strokeWidth: 5,
+                      color: AppColors.primary,
+                      borderStrokeWidth: 2,
+                      borderColor: Colors.white.withValues(alpha: 0.8),
                     ),
-                ],
+                ] : [],
               ),
               
-              // 2. Map Controls & Manual Upload - Positioned above sheet
+              // 2. Map Controls - Positioned above sheet
               Positioned(
                 bottom: MediaQuery.of(context).size.height * 0.22, // Above collapsed sheet
                 right: 16,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    FloatingActionButton(
-                      heroTag: 'manual_entry',
-                      mini: true,
-                      backgroundColor: Colors.white,
-                      child: const Icon(Icons.edit_note, color: Colors.black87),
-                      onPressed: () {
-                         final defaultSummary = TrackingSummary(
-                          isTracking: false,
-                          startTime: DateTime.now(),
-                          duration: const Duration(minutes: 0),
-                          totalDistance: 0.0,
-                          averageSpeed: 0.0,
-                          maxSpeed: 0.0,
-                          totalElevationGain: 0.0,
-                          totalElevationLoss: 0.0,
-                          minAltitude: null,
-                          maxAltitude: null,
-                          trackPoints: [],
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VisitDataFormPage(trackingSummary: defaultSummary),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
                     if (_showRecenterButton)
                       FloatingActionButton(
                         heroTag: 'recenter',
@@ -1227,15 +1204,19 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                 left: 0,
                 right: 0,
                 height: 100,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.6),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
+                child: AnimatedOpacity(
+                  opacity: _sheetExtent > 0.95 ? 0.0 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.6),
+                          Colors.white.withValues(alpha: 0.0),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1278,26 +1259,43 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
               ),
 
               // 5. Draggable Sheet
-              DraggableScrollableSheet(
-                initialChildSize: 0.18,
-                minChildSize: 0.18,
-                maxChildSize: 0.85,
-                snap: true,
-                snapSizes: const [0.18, 0.85], // Simplified snap points for smoother feel
-                builder: (context, scrollController) {
-                  return TrackingBottomSheet(
-                    scrollController: scrollController,
-                    summary: _trackingStateService.getSummary(),
-                    currentSpeed: _currentSpeed,
-                    currentAltitude: _currentAltitude,
-                    isTracking: isTracking,
-                    isPaused: _isPaused, 
-                    onToggleTracking: _toggleTracking,
-                    onPauseTracking: _pauseTracking,
-                    onStopTracking: _stopTracking,
-                    onCenterMap: _centerOnLocation,
-                  );
+              NotificationListener<DraggableScrollableNotification>(
+                onNotification: (notification) {
+                  setState(() {
+                    _sheetExtent = notification.extent;
+                  });
+                  return true;
                 },
+                child: DraggableScrollableSheet(
+                  controller: _sheetController,
+                  initialChildSize: 0.18,
+                  minChildSize: 0.18,
+                  maxChildSize: 1.0,
+                  snap: true,
+                  snapSizes: const [0.18, 0.5, 1.0],
+                  builder: (context, scrollController) {
+                    return TrackingBottomSheet(
+                      scrollController: scrollController,
+                      summary: _trackingStateService.getSummary(),
+                      currentSpeed: _currentSpeed,
+                      currentAltitude: _currentAltitude,
+                      isTracking: isTracking,
+                      isPaused: _isPaused,
+                      onToggleTracking: _toggleTracking,
+                      onPauseTracking: _pauseTracking,
+                      onStopTracking: _stopTracking,
+                      onCenterMap: _centerOnLocation,
+                      sheetPosition: _sheetExtent,
+                      onClose: () {
+                         _sheetController.animateTo(
+                          0.5,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),

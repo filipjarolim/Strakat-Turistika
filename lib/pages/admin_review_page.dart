@@ -19,6 +19,7 @@ import '../widgets/ui/app_button.dart';
 import '../widgets/ui/app_toast.dart';
 import 'admin/system_overview_page.dart';
 import 'package:flutter_map/flutter_map.dart';
+import '../widgets/maps/shared_map_widget.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -1068,26 +1069,73 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
                             ),
                             const SizedBox(height: 12),
                             Container(
-                              height: 250,
+                              height: 350,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(color: Colors.grey.withOpacity(0.2)),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: FlutterMap(
-                                  options: MapOptions(
-                                    initialCenter: const LatLng(50.0755, 14.4378), // Default center
-                                    initialZoom: 13,
-                                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
-                                  ),
-                                  children: [
-                                    TileLayer(
-                                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName: 'cz.strakata.turistika',
+                              child: Builder(builder: (context) {
+                                final r = visit.route ?? {};
+                                final raw = (r['trackPoints'] as List?) ?? (r['points'] as List?) ?? (r['path'] as List?) ?? [];
+                                final points = <LatLng>[];
+                                for (final item in raw) {
+                                  if (item is Map) {
+                                    final lat = (item['latitude'] ?? item['lat'] ?? item['y']) as num?;
+                                    final lon = (item['longitude'] ?? item['lng'] ?? item['lon'] ?? item['x']) as num?;
+                                    if (lat != null && lon != null) {
+                                      points.add(LatLng(lat.toDouble(), lon.toDouble()));
+                                    }
+                                  }
+                                }
+                                
+                                if (points.isEmpty) return const Center(child: Text('Chybí data trasy'));
+
+                                // Calculate bounds
+                                double minLat = points.first.latitude;
+                                double maxLat = points.first.latitude;
+                                double minLng = points.first.longitude;
+                                double maxLng = points.first.longitude;
+                                
+                                for (var p in points) {
+                                  if (p.latitude < minLat) minLat = p.latitude;
+                                  if (p.latitude > maxLat) maxLat = p.latitude;
+                                  if (p.longitude < minLng) minLng = p.longitude;
+                                  if (p.longitude > maxLng) maxLng = p.longitude;
+                                }
+                                final centerLat = (minLat + maxLat) / 2;
+                                final centerLng = (minLng + maxLng) / 2;
+                                
+                                return SharedMapWidget(
+                                  center: LatLng(centerLat, centerLng),
+                                  zoom: 13,
+                                  polylines: [
+                                    Polyline(
+                                      points: points,
+                                      strokeWidth: 4,
+                                      color: Colors.blue,
                                     ),
-                                    // TODO: Add actual route polyline decoding here
                                   ],
-                                ),
+                                  markers: [
+                                     Marker(
+                                      point: points.first,
+                                      width: 12,
+                                      height: 12,
+                                      child: Container(
+                                        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                                      ),
+                                    ),
+                                    Marker(
+                                      point: points.last,
+                                      width: 12,
+                                      height: 12,
+                                      child: Container(
+                                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }),
                             ),
                           ] else if (isScreenshot && firstPhoto != null) ...[
                             const SizedBox(height: 24),
