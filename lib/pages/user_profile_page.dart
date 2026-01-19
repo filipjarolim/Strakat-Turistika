@@ -1037,9 +1037,31 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                   const SizedBox(height: 24),
                   
-                  TextField(controller: nameController, decoration: InputDecoration(labelText: 'Jméno', filled: true, fillColor: const Color(0xFFF9FAFB),  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Jméno',
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: Colors.grey),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 1.5)),
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  TextField(controller: dogNameController, decoration: InputDecoration(labelText: 'Jméno psa', filled: true, fillColor: const Color(0xFFF9FAFB), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+                  TextField(
+                    controller: dogNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Jméno psa',
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      prefixIcon: const Icon(Icons.pets_rounded, color: Colors.grey),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 1.5)),
+                    ),
+                  ),
                   
                   const SizedBox(height: 32),
                   SizedBox(
