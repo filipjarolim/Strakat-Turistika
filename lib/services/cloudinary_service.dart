@@ -28,7 +28,7 @@ class CloudinaryService {
       
       // Get file size
       final fileSize = await imageFile.length();
-      print('📁 File size: ${fileSize} bytes');
+      // print('📁 File size: ${fileSize} bytes');
       
       // Try the public upload first
       try {
@@ -40,7 +40,7 @@ class CloudinaryService {
           ),
         );
         
-        print('✅ Image uploaded successfully: ${response.secureUrl}');
+        // print('✅ Image uploaded successfully: ${response.secureUrl}');
         return response.secureUrl;
       } catch (e) {
         print('❌ Public upload failed: $e');
@@ -93,7 +93,7 @@ class CloudinaryService {
           ),
         );
         
-        print('✅ Upload successful with preset "$preset": ${response.secureUrl}');
+        // print('✅ Upload successful with preset "$preset": ${response.secureUrl}');
         return response.secureUrl;
       } catch (e) {
         print('❌ Upload failed with preset "$preset": $e');
@@ -141,7 +141,7 @@ class CloudinaryService {
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseBody);
         final secureUrl = jsonResponse['secure_url'];
-        print('✅ API key upload successful: $secureUrl');
+        // print('✅ API key upload successful: $secureUrl');
         return secureUrl;
       } else {
         print('❌ API key upload failed: ${response.statusCode} - $responseBody');
@@ -191,7 +191,7 @@ class CloudinaryService {
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(responseBody);
         final secureUrl = jsonResponse['secure_url'];
-        print('✅ Upload without preset successful: $secureUrl');
+        // print('✅ Upload without preset successful: $secureUrl');
         return secureUrl;
       } else {
         print('❌ Upload without preset failed: ${response.statusCode} - $responseBody');

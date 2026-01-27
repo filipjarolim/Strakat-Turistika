@@ -5,13 +5,14 @@ import '../services/form_field_service.dart' as form_service;
 import '../models/place_type_config.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../services/visit_data_service.dart';
+import '../repositories/visit_repository.dart';
 import '../services/error_recovery_service.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/ui/app_button.dart';
 import '../widgets/ui/app_toast.dart';
+import '../utils/type_converter.dart';
 
 class AdminDialogs {
   // Visit Details Dialog
@@ -39,25 +40,26 @@ class AdminDialogs {
               children: [
                 // Header
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF4CAF50),
+                    color: Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24),
                     ),
+                    border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.visibility, color: Colors.white, size: 22),
+                        child: const Icon(Icons.visibility_rounded, color: Color(0xFF2E7D32), size: 24),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,26 +67,33 @@ class AdminDialogs {
                             Text(
                               visitData.routeTitle ?? 'Bez názvu',
                               style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF111827),
+                                letterSpacing: -0.5,
                               ),
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
-                              'Detail návštěvy',
-                              style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.95)),
+                              'DETAIL NÁVŠTĚVY'.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10, 
+                                color: Colors.grey[500],
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close, color: Colors.white, size: 22),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF111827), size: 24),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.18),
+                          backgroundColor: const Color(0xFFF3F4F6),
                           padding: const EdgeInsets.all(8),
                         ),
                       ),
@@ -208,57 +217,49 @@ class AdminDialogs {
                 ),
                 
                 // Footer actions
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: LayoutBuilder(builder: (context, c) {
-                    final buttonMinWidth = c.maxWidth >= 560 ? 160.0 : 140.0;
-                    final buttonHeight = 44.0;
                     return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.end,
                       children: [
-                        AppButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          text: 'Zavřít',
-                          icon: Icons.close,
-                          type: AppButtonType.outline,
-                          size: AppButtonSize.medium,
-                        ),
-                        AppButton(
-                          onPressed: () async {
-                            final ok = await VisitDataService().updateVisitDataState(visitData.id, VisitState.APPROVED);
-                            if (ok && context.mounted) Navigator.of(context).pop();
-                          },
-                          text: 'Schválit',
-                          icon: Icons.check_circle_outline,
-                          type: AppButtonType.primary,
-                          size: AppButtonSize.medium,
-                        ),
-                        AppButton(
+                         AppButton(
                           onPressed: () async {
                             final reason = await _askRejectReason(context);
                             if (reason == null) return;
-                            final ok = await VisitDataService().updateVisitDataState(visitData.id, VisitState.REJECTED, rejectionReason: reason);
+                            final ok = await VisitRepository().updateVisitState(visitData.id, VisitState.REJECTED, rejectionReason: reason);
                             if (ok && context.mounted) Navigator.of(context).pop();
                           },
-                          text: 'Zamítnout',
-                          icon: Icons.cancel_outlined,
-                          type: AppButtonType.destructive,
+                          text: 'ZAMÍTNOUT',
+                          icon: Icons.close_rounded,
+                          type: AppButtonType.destructiveOutline,
                           size: AppButtonSize.medium,
                         ),
                         AppButton(
                           onPressed: () async {
                             await showEditPointsDialog(context, visitData);
                           },
-                          text: 'Upravit body',
-                          icon: Icons.edit_outlined,
+                          text: 'UPRAVIT BODY',
+                          icon: Icons.edit_rounded,
+                          type: AppButtonType.secondary,
+                          size: AppButtonSize.medium,
+                        ),
+                        AppButton(
+                          onPressed: () async {
+                            final ok = await VisitRepository().updateVisitState(visitData.id, VisitState.APPROVED);
+                            if (ok && context.mounted) Navigator.of(context).pop();
+                          },
+                          text: 'SCHVÁLIT',
+                          icon: Icons.check_rounded,
                           type: AppButtonType.primary,
                           size: AppButtonSize.medium,
                         ),
                       ],
                     );
                   }),
-                            ),
+                ),
                           ],
                         ),
           ),
@@ -329,7 +330,7 @@ class AdminDialogs {
               final pk = int.tryParse(peaksC.text) ?? 0;
               final tw = int.tryParse(towersC.text) ?? 0;
               final tr = int.tryParse(treesC.text) ?? 0;
-              final ok = await VisitDataService().updateVisitDataPoints(visit.id, p, pk, tw, tr);
+              final ok = await VisitRepository().updateVisitPoints(visit.id, p, pk, tw, tr);
               if (ok && context.mounted) Navigator.pop(context);
             },
             text: 'Uložit',
@@ -347,8 +348,8 @@ class AdminDialogs {
     if (track is List) {
       for (final item in track) {
         if (item is Map) {
-          final lat = (item['latitude'] ?? item['lat'] ?? item['y']) as num?;
-          final lon = (item['longitude'] ?? item['lng'] ?? item['lon'] ?? item['x']) as num?;
+          final lat = TypeConverter.toDouble(item['latitude'] ?? item['lat'] ?? item['y']);
+          final lon = TypeConverter.toDouble(item['longitude'] ?? item['lng'] ?? item['lon'] ?? item['x']);
           if (lat != null && lon != null) {
             pts.add(LatLng(lat.toDouble(), lon.toDouble()));
           }
@@ -391,8 +392,8 @@ class AdminDialogs {
       }
     }
 
-    final totalMeters = (visit.route?['totalDistance'] as num?)?.toDouble() ?? 0.0;
-    final durationSec = (visit.route?['duration'] as num?)?.toInt() ?? 0;
+    final totalMeters = TypeConverter.toDoubleWithDefault(visit.route?['totalDistance'], 0.0);
+    final durationSec = TypeConverter.toIntWithDefault(visit.route?['duration'], 0);
     final km = totalMeters / 1000.0;
     final h = durationSec > 0 ? (durationSec / 3600.0) : 0.0;
     final avg = (h > 0 && km > 0) ? (km / h) : 0.0;
@@ -718,11 +719,11 @@ class AdminDialogs {
 
   static Widget _buildInfoSection(String title, IconData icon, List<Widget> rows) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,15 +731,26 @@ class AdminDialogs {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, size: 16, color: const Color(0xFF2E7D32)),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 16, color: const Color(0xFF111827)),
               ),
-              const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1F2937))),
+              const SizedBox(width: 12),
+              Text(
+                title.toUpperCase(), 
+                style: TextStyle(
+                  fontSize: 11, 
+                  fontWeight: FontWeight.w900, 
+                  color: const Color(0xFF111827),
+                  letterSpacing: 0.5,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
           ...rows,
         ],
       ),
@@ -747,12 +759,31 @@ class AdminDialogs {
 
   static Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontWeight: FontWeight.w600))),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: Color(0xFF111827), fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: 120, 
+            child: Text(
+              label, 
+              style: TextStyle(
+                fontSize: 12, 
+                color: Colors.grey[500], 
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value, 
+              style: const TextStyle(
+                fontSize: 13, 
+                color: Color(0xFF111827), 
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -764,7 +795,7 @@ class AdminDialogs {
   }
 
   static String _prettyKm(dynamic metersVal) {
-    final m = (metersVal as num?)?.toDouble() ?? 0.0;
+    final m = TypeConverter.toDoubleWithDefault(metersVal, 0.0);
     return '${(m / 1000.0).toStringAsFixed(2)} km';
   }
 

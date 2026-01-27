@@ -1,6 +1,7 @@
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
-import 'mongodb_service.dart';
+import 'database/database_service.dart';
 import 'auth_service.dart';
+import '../utils/type_converter.dart';
 
 class ScoringConfig {
   final String id;
@@ -63,23 +64,21 @@ class ScoringConfig {
       // Nová verze s mapou
       final pointsMap = map['placeTypePoints'] as Map<String, dynamic>;
       pointsMap.forEach((key, value) {
-        if (value is num) {
-          placeTypePoints[key] = value.toDouble();
-        }
+        placeTypePoints[key] = TypeConverter.toDoubleWithDefault(value, 0.0);
       });
     } else {
       // Stará verze - převedeme na novou mapu
       placeTypePoints = {
-        'vrchol': (map['peakPoints'] as num?)?.toDouble() ?? 1.0,
-        'rozhledna': (map['towerPoints'] as num?)?.toDouble() ?? 1.0,
-        'strom': (map['treePoints'] as num?)?.toDouble() ?? 1.0,
+        'vrchol': TypeConverter.toDoubleWithDefault(map['peakPoints'], 1.0),
+        'rozhledna': TypeConverter.toDoubleWithDefault(map['towerPoints'], 1.0),
+        'strom': TypeConverter.toDoubleWithDefault(map['treePoints'], 1.0),
       };
     }
     
     return ScoringConfig(
       id: map['id']?.toString() ?? 'default_scoring_config',
-      pointsPerKm: (map['pointsPerKm'] as num?)?.toDouble() ?? 1.0,
-      minDistanceKm: (map['minDistanceKm'] as num?)?.toDouble() ?? 3.0,
+      pointsPerKm: TypeConverter.toDoubleWithDefault(map['pointsPerKm'], 1.0),
+      minDistanceKm: TypeConverter.toDoubleWithDefault(map['minDistanceKm'], 3.0),
       requireAtLeastOnePlace: map['requireAtLeastOnePlace'] == true,
       placeTypePoints: placeTypePoints,
       active: map['active'] == true,
@@ -90,14 +89,14 @@ class ScoringConfig {
 
   factory ScoringConfig.fromJson(Map<String, dynamic> json) {
     return ScoringConfig(
-      id: json['id'],
-      pointsPerKm: (json['pointsPerKm'] as num).toDouble(),
-      minDistanceKm: (json['minDistanceKm'] as num).toDouble(),
-      requireAtLeastOnePlace: json['requireAtLeastOnePlace'] as bool,
-      placeTypePoints: Map<String, double>.from(
-        json['placeTypePoints'] as Map
+      id: json['id']?.toString() ?? '',
+      pointsPerKm: TypeConverter.toDoubleWithDefault(json['pointsPerKm'], 0.0),
+      minDistanceKm: TypeConverter.toDoubleWithDefault(json['minDistanceKm'], 0.0),
+      requireAtLeastOnePlace: json['requireAtLeastOnePlace'] == true,
+      placeTypePoints: (json['placeTypePoints'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) => MapEntry(key, TypeConverter.toDoubleWithDefault(value, 0.0))
       ),
-      active: json['active'] as bool,
+      active: json['active'] == true,
       updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? DateTime.now(),
       updatedBy: json['updatedBy']?.toString(),
     );
@@ -110,31 +109,29 @@ class ScoringConfigService {
   ScoringConfigService._internal();
 
   static const String _collection = 'scoring_configs';
+  final DatabaseService _dbService = DatabaseService(); // Initialize DatabaseService
 
   Future<ScoringConfig> getConfig() async {
-    final collection = await MongoDBService.getCollection(_collection);
-    if (collection == null) {
+    try {
+      final doc = await _dbService.execute((db) async {
+        final collection = db.collection(_collection);
+        return await collection.findOne({'active': true});
+      });
+
+      if (doc == null) return _defaultConfig();
+      return ScoringConfig.fromMap(doc);
+    } catch (e) {
+      print('❌ Error getting scoring config: $e');
       return _defaultConfig();
     }
-    final doc = await collection.findOne({'active': true});
-    if (doc == null) return _defaultConfig();
-    return ScoringConfig.fromMap(doc);
   }
 
   Future<bool> saveConfig(ScoringConfig config) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final updatedBy = AuthService.currentUser?.id;
       final toSave = config.copyWith(updatedAt: DateTime.now(), updatedBy: updatedBy).toMap();
 
-      // First, deactivate all existing configs
-      await collection.updateMany(
-        {'active': true}, 
-        {'\$set': {'active': false}}
-      );
-
-      // Use modifier builder; setOnInsert for id and set each field explicitly
       var modifier = mongo.modify.setOnInsert('id', config.id);
       final fieldsToSet = Map<String, dynamic>.from(toSave)..remove('id');
       fieldsToSet.forEach((k, v) {
@@ -143,11 +140,10 @@ class ScoringConfigService {
 
       await collection.updateOne({'id': config.id}, modifier, upsert: true);
       return true;
-    } catch (e) {
-      // ignore: avoid_print
-      print('❌ Failed to save scoring config: $e');
+    }).catchError((e) {
+      print('❌ Error saving scoring config: $e');
       return false;
-    }
+    });
   }
 
   ScoringConfig _defaultConfig() => ScoringConfig(

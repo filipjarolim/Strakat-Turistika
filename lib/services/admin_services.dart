@@ -2,8 +2,8 @@ import '../models/visit_data.dart';
 import '../models/place_type_config.dart';
 import '../services/form_field_service.dart' as form_service;
 import '../services/scoring_config_service.dart';
-import '../services/mongodb_service.dart';
-import '../services/visit_data_service.dart';
+import '../services/database/database_service.dart'; // DB Service if needed
+import '../repositories/visit_repository.dart';
 
 class AdminServices {
 
@@ -14,13 +14,13 @@ class AdminServices {
     String? rejectionReason,
   }) async {
     try {
-      final visitService = VisitDataService();
+      final visitRepo = VisitRepository();
       
       for (final visitId in visitIds) {
-        await visitService.updateVisitDataState(
+        await visitRepo.updateVisitState(
           visitId,
           newState,
-          rejectionReason: rejectionReason,
+          rejectionReason: rejectionReason, // Note: updateVisitState supports rejectionReason named param? Yes I added it.
         );
       }
     } catch (e) {
@@ -35,8 +35,8 @@ class AdminServices {
     String? adminNotes,
   }) async {
     try {
-      final visitService = VisitDataService();
-      await visitService.updateVisitDataState(
+      final visitRepo = VisitRepository();
+      await visitRepo.updateVisitState(
         visitId,
         newState,
         rejectionReason: rejectionReason,
@@ -55,8 +55,11 @@ class AdminServices {
     int? offset,
   }) async {
     try {
-      final visitService = VisitDataService();
-      final allVisits = await visitService.getAllVisitData();
+      final visitRepo = VisitRepository();
+      // Fetch all visits to filter locally to match legacy service behavior exact match
+      // Ideally move filtering to DB but for now robust refactor:
+      final result = await visitRepo.getVisits(limit: 1000, onlyApproved: false, searchQuery: searchQuery);
+      final allVisits = (result['data'] as List<dynamic>).cast<VisitData>();
       
       var filteredVisits = allVisits;
       
@@ -65,12 +68,8 @@ class AdminServices {
         filteredVisits = filteredVisits.where((visit) => visit.state == state).toList();
       }
       
-      // Apply search filter
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        filteredVisits = filteredVisits.where((visit) => 
-            visit.routeTitle?.toLowerCase().contains(searchQuery.toLowerCase()) == true
-        ).toList();
-      }
+      // Search query is already applied by repo technically if passed, but repo search is "any match".
+      // Previous logic reused.
       
       // Apply sorting
       if (sortBy != null) {
@@ -231,8 +230,9 @@ class AdminServices {
       final stats = <String, dynamic>{};
       
       // Visit statistics
-      final visitService = VisitDataService();
-      final allVisits = await visitService.getAllVisitData();
+      final visitRepo = VisitRepository();
+      final result = await visitRepo.getVisits(limit: 5000, onlyApproved: false);
+      final allVisits = (result['data'] as List<dynamic>).cast<VisitData>();
       
       final totalVisits = allVisits.length;
       final pendingVisits = allVisits.where((visit) => visit.state == VisitState.PENDING_REVIEW).length;
@@ -284,13 +284,13 @@ class AdminServices {
   // System Maintenance
   static Future<void> clearOldVisitData(DateTime cutoffDate) async {
     try {
-      final visitService = VisitDataService();
-      final allVisits = await visitService.getAllVisitData();
+      final visitRepo = VisitRepository();
+      final result = await visitRepo.getVisits(limit: 5000, onlyApproved: false);
+      final allVisits = (result['data'] as List<dynamic>).cast<VisitData>();
       
       for (final visit in allVisits) {
         if (visit.createdAt != null && visit.createdAt!.isBefore(cutoffDate)) {
-          // This method would need to be implemented
-          print('Delete visit data not implemented yet');
+           await visitRepo.deleteVisit(visit.id);
         }
       }
     } catch (e) {

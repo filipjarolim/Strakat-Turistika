@@ -1,0 +1,46 @@
+# Flutter Verification Workflow Rule
+
+This rule ensures that the agent proactively verifies code changes on a running emulator/device before declaring a task finished.
+
+## Trigger
+- When major code changes are made (e.g., refactoring services, fixing database logic, UI redesigns).
+- When resolving connectivity or runtime issues.
+
+## Required Steps
+
+### 1. Identify Target Device
+The agent MUST check for connected devices first:
+```bash
+flutter devices
+```
+
+### 2. Run Application
+The agent MUST attempt to run the application on the most appropriate device (usually the emulator):
+```bash
+flutter run -d <device_id>
+```
+
+### 3. Monitor Build Errors
+- If the build fails (syntax, imports, etc.), the agent MUST fix the code and retry the build until successful.
+- The agent should NOT notify the user of simple compilation errors unless they represent a fundamental blocker.
+
+### 4. Verify Initialization (Hot Restart)
+Once running, the agent MUST trigger a **Hot Restart** (sending 'R' to the terminal) to verify:
+- Database connection initialization.
+- Startup service sequences.
+- Initial UI state.
+
+### 5. Log Analysis
+The agent MUST monitor the logs for:
+- Database success messages (e.g., `✅ Connected successfully!`).
+- Firebase/Notification readiness.
+- Any Red/Exception logs.
+
+### 6. User Notification
+The agent only notifies the user AFTER:
+- The app builds and runs successfully.
+- Initialization logs confirm core services are active.
+- Runtime errors found during verification are resolved.
+
+> [!IMPORTANT]
+> Always use `print()` instead of `log()` (from `dart:developer`) for critical lifecycle messages (like DB connection) to ensure visibility in the terminal output.

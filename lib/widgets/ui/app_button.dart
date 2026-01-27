@@ -121,8 +121,7 @@ class AppButton extends StatelessWidget {
         return ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          elevation: 2,
-          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+          elevation: 0,
           shape: shape,
           padding: padding,
         );
@@ -138,15 +137,14 @@ class AppButton extends StatelessWidget {
         return ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFEF4444),
           foregroundColor: Colors.white,
-          elevation: 2,
-          shadowColor: const Color(0xFFEF4444).withValues(alpha: 0.4),
+          elevation: 0,
           shape: shape,
           padding: padding,
         );
       case AppButtonType.outline:
         return OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFF374151),
-          side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.5),
+          side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
           shape: shape,
           padding: padding,
         );

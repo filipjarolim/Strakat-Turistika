@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../services/visit_data_service.dart';
+import '../pages/dynamic_upload_page.dart';
+import '../repositories/visit_repository.dart';
 import '../models/visit_data.dart';
 import '../widgets/tab_switch.dart';
 import '../widgets/ui/app_button.dart';
@@ -90,8 +91,11 @@ class ExploreTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Recent Activity
                     const RecentActivitySection(),
+                    const SizedBox(height: 32),
+
+                    // Manual Upload Section
+                    const ManualUploadSection(),
                   ],
                 ),
               ),
@@ -128,9 +132,6 @@ class ExploreTab extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Profile Icon (Floating)
-
         ],
       ),
     );
@@ -309,7 +310,6 @@ class QuickStatCard extends StatelessWidget {
   }
 }
 
-// Reuse Activity Section mostly as is, but styled cleaner
 class RecentActivitySection extends StatefulWidget {
   const RecentActivitySection({super.key});
 
@@ -318,7 +318,7 @@ class RecentActivitySection extends StatefulWidget {
 }
 
 class _RecentActivitySectionState extends State<RecentActivitySection> {
-  final VisitDataService _visitDataService = VisitDataService();
+  final VisitRepository _visitRepository = VisitRepository();
   List<VisitData> _recent = [];
   bool _loading = true;
 
@@ -338,8 +338,13 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
     try {
       final season = DateTime.now().year;
       final currentUser = AuthService.currentUser;
-      final result = await _visitDataService.getPaginatedVisitData(
-        page: 1, limit: 3, season: season, state: null, userId: currentUser?.id, sortBy: 'createdAt', sortDescending: true,
+      final result = await _visitRepository.getVisits(
+        page: 1, 
+        limit: 3, 
+        seasonYear: season, 
+        userId: currentUser?.id, 
+        onlyApproved: false, // Show pending/rejected for own activity too? Or usually public valid ones? Let's say user's own.
+        // Actually getVisits filter is structured. Let's use it as is.
       );
       if (!mounted) return;
       setState(() {
@@ -431,6 +436,104 @@ class ActivityItem extends StatelessWidget {
            style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.w600),
         ),
         trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+      ),
+    );
+  }
+}
+
+class ManualUploadSection extends StatelessWidget {
+  const ManualUploadSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ruční nahrání',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _UploadCard(
+                label: 'GPX soubor',
+                icon: Icons.upload_file_rounded,
+                color: Colors.blue,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DynamicUploadPage(slug: 'gpx-upload')),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _UploadCard(
+                label: 'Screenshot',
+                icon: Icons.add_photo_alternate_rounded,
+                color: Colors.purple,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DynamicUploadPage(slug: 'screenshot-upload')),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _UploadCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _UploadCard({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Icon(icon, color: color, size: 28),
+                const SizedBox(height: 12),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1F2937)),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

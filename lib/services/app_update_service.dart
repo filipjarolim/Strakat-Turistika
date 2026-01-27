@@ -40,7 +40,10 @@ class AppUpdateService {
         }
       }
     } catch (e) {
-      debugPrint('Chyba při kontrole aktualizace: $e');
+      final errorStr = e.toString();
+      if (!errorStr.contains('ERROR_APP_NOT_OWNED')) {
+        debugPrint('Chyba při kontrole aktualizace: $e');
+      }
     } finally {
       _isCheckingForUpdate = false;
     }
@@ -171,7 +174,10 @@ class AppUpdateService {
       final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
       return updateInfo.updateAvailability == UpdateAvailability.updateAvailable;
     } catch (e) {
-      debugPrint('Chyba při tiché kontrole aktualizace: $e');
+      final errorStr = e.toString();
+      if (!errorStr.contains('ERROR_APP_NOT_OWNED')) {
+        debugPrint('Chyba při tiché kontrole aktualizace: $e');
+      }
       return false;
     }
   }

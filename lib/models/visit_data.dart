@@ -1,4 +1,4 @@
-
+import '../utils/type_converter.dart';
 
 enum UserRole {
   ADMIN,
@@ -202,61 +202,87 @@ class VisitData {
 
   factory VisitData.fromMap(Map<String, dynamic> map) {
     try {
+      // 1. Helper to extract extraPoints safely
+      final extra = map['extraPoints'] is Map ? map['extraPoints'] as Map : {};
+      
+      // 2. Robust Points Parsing
+      double parsedPoints = 0.0;
+      if (map['points'] != null) {
+        parsedPoints = TypeConverter.toDoubleWithDefault(map['points'], 0.0);
+      } else if (extra['Body'] != null) {
+        parsedPoints = TypeConverter.toDoubleWithDefault(extra['Body'], 0.0);
+      } else if (extra['points'] != null) {
+        parsedPoints = TypeConverter.toDoubleWithDefault(extra['points'], 0.0);
+      }
+
+      // 3. Robust Name Parsing
+      String parsedName = 'Neznámý turista';
+      if (map['displayName'] != null) parsedName = map['displayName'].toString();
+      else if (map['user'] != null && map['user']['name'] != null) parsedName = map['user']['name'].toString();
+      else if (map['fullName'] != null) parsedName = map['fullName'].toString();
+      else if (extra['fullName'] != null) parsedName = extra['fullName'].toString();
+      else if (extra['Příjmení a jméno'] != null) parsedName = extra['Příjmení a jméno'].toString();
+
+      // 4. Robust Date Parsing
+      DateTime parsedDate = DateTime.now();
+      if (map['visitDate'] != null) {
+        parsedDate = map['visitDate'] is DateTime 
+            ? map['visitDate'] 
+            : DateTime.tryParse(map['visitDate'].toString()) ?? DateTime.now();
+      } else if (map['createdAt'] != null) {
+        parsedDate = map['createdAt'] is DateTime 
+            ? map['createdAt'] 
+            : DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now();
+      }
+      
+      // 5. Robust Places Parsing
+      String parsedPlacesStr = '';
+      if (map['visitedPlaces'] != null) parsedPlacesStr = map['visitedPlaces'].toString();
+      else if (extra['Navštívená místa'] != null) parsedPlacesStr = extra['Navštívená místa'].toString();
+
       return VisitData(
-      id: map['_id'] ?? map['id'] ?? '',
-      visitDate: map['visitDate'] != null 
-          ? (map['visitDate'] is DateTime 
-              ? map['visitDate'] as DateTime 
-              : DateTime.parse(map['visitDate'].toString()))
-          : null,
-      routeTitle: map['routeTitle'],
-      routeDescription: map['routeDescription'],
-      dogName: map['dogName'],
-      points: _parseDouble(map['points']) ?? 0.0,
-      visitedPlaces: map['visitedPlaces'] ?? '',
-      dogNotAllowed: map['dogNotAllowed'],
-      routeLink: map['routeLink'],
-      route: map['route'] != null 
-          ? (map['route'] is Map 
-              ? Map<String, dynamic>.from(map['route']) 
-              : null)
-          : null,
-      year: _parseInt(map['seasonYear']) ?? DateTime.now().year,
-      extraPoints: map['extraPoints'] != null 
-          ? (map['extraPoints'] is Map 
-              ? Map<String, dynamic>.from(map['extraPoints']) 
-              : {})
-          : {},
-      extraData: map['extraData'] != null 
-          ? Map<String, dynamic>.from(map['extraData'])
-          : null,
-      places: (map['places'] as List<dynamic>?)
-          ?.map((place) => Place.fromMap(place))
-          .toList() ?? [],
-      state: VisitState.values.firstWhere(
-        (e) => e.name == map['state'],
-        orElse: () => VisitState.DRAFT,
-      ),
-      rejectionReason: map['rejectionReason'],
-      createdAt: map['createdAt'] != null 
-          ? (map['createdAt'] is DateTime 
-              ? map['createdAt'] as DateTime 
-              : DateTime.parse(map['createdAt'].toString()))
-          : null,
-      photos: map['photos'] != null 
-          ? List<Map<String, dynamic>>.from(map['photos'])
-          : null,
-      seasonId: map['seasonId'],
-      userId: map['userId'],
-      user: map['user'] != null 
-          ? Map<String, dynamic>.from(map['user'])
-          : null,
-      displayName: map['displayName']?.toString(),
-    );
+        id: map['_id'] != null ? map['_id'].toString() : (map['id']?.toString() ?? ''),
+        visitDate: parsedDate,
+        routeTitle: map['routeTitle']?.toString(), // Often null for legacy
+        routeDescription: map['routeDescription']?.toString(),
+        dogName: map['dogName']?.toString() ?? extra['Volací jméno psa']?.toString(),
+        points: parsedPoints,
+        visitedPlaces: parsedPlacesStr,
+        dogNotAllowed: map['dogNotAllowed']?.toString(),
+        routeLink: map['routeLink']?.toString(),
+        route: map['route'] is Map ? Map<String, dynamic>.from(map['route']) : null,
+        year: TypeConverter.toIntWithDefault(map['seasonYear'], parsedDate.year),
+        extraPoints: Map<String, dynamic>.from(extra),
+        extraData: map['extraData'] is Map ? Map<String, dynamic>.from(map['extraData']) : null,
+        places: (map['places'] as List<dynamic>?)
+            ?.map((place) => Place.fromMap(place))
+            .toList() ?? [],
+        state: VisitState.values.firstWhere(
+          (e) => e.name == map['state'],
+          orElse: () => VisitState.APPROVED, // Default legacy data to approved usually
+        ),
+        rejectionReason: map['rejectionReason']?.toString(),
+        createdAt: map['createdAt'] is DateTime 
+            ? map['createdAt'] 
+            : DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? parsedDate,
+        photos: map['photos'] is List ? List<Map<String, dynamic>>.from(map['photos']) : null,
+        seasonId: map['seasonId']?.toString(),
+        userId: map['userId']?.toString(),
+        user: map['user'] is Map ? Map<String, dynamic>.from(map['user']) : null,
+        displayName: parsedName,
+      );
     } catch (e) {
       print('❌ Error parsing VisitData: $e');
-      print('❌ Map data: $map');
-      rethrow;
+      print('❌ Map data (partial): ${map['_id']}');
+      // Return a safe "Error" object instead of rethrowing, to avoid crashing list views
+      return VisitData(
+        id: map['_id']?.toString() ?? 'error',
+        points: 0,
+        visitedPlaces: 'Error parsing data',
+        year: DateTime.now().year,
+        extraPoints: {},
+        state: VisitState.REJECTED
+      );
     }
   }
 
@@ -320,19 +346,7 @@ class VisitData {
   }
 
   // Helper method to parse int values from MongoDB (handles both int and Int64)
-  static int? _parseInt(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is String) return int.tryParse(value);
-    // Handle Int64 and other numeric types
-    return int.tryParse(value.toString());
-  }
+  static int? _parseInt(dynamic value) => TypeConverter.toInt(value);
 
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value.replaceAll(',', '.'));
-    return double.tryParse(value.toString());
-  }
+  static double? _parseDouble(dynamic value) => TypeConverter.toDouble(value);
 } 

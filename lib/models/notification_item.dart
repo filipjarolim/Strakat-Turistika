@@ -22,15 +22,15 @@ class NotificationItem {
 
   factory NotificationItem.fromMap(Map<String, dynamic> map) {
     return NotificationItem(
-      id: map['id'] as String,
-      title: map['title'] as String? ?? '',
-      body: map['body'] as String? ?? '',
-      type: map['type'] as String? ?? 'generic',
-      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
+      id: (map['id'] ?? map['_id'] ?? '').toString(),
+      title: map['title']?.toString() ?? '',
+      body: map['body']?.toString() ?? '',
+      type: map['type']?.toString() ?? 'generic',
+      timestamp: DateTime.tryParse(map['timestamp']?.toString() ?? '') ?? DateTime.now(),
       data: map['data'] is Map<String, dynamic>
           ? (map['data'] as Map<String, dynamic>)
-          : (map['data'] != null ? Map<String, dynamic>.from(jsonDecode(map['data'])) : null),
-      read: map['read'] as bool? ?? false,
+          : (map['data'] != null ? Map<String, dynamic>.from(jsonDecode(map['data'].toString())) : null),
+      read: map['read'] == true,
     );
   }
 

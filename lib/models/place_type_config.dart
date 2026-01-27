@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mongo_dart/mongo_dart.dart' as mongo;
-import '../services/mongodb_service.dart';
+import 'package:mongo_dart/mongo_dart.dart' as mongo; // Keep for types if needed, or remove if unused in interface
+import '../services/database/database_service.dart'; // Updated
 import '../services/auth_service.dart';
 
 class PlaceTypeConfig {
+// ... [Class properties unchanged] ...
   final String id;
   final String name;
   final String label;
@@ -91,15 +92,21 @@ class PlaceTypeConfig {
       'OTHER': Colors.grey,
     };
 
+    // Helper for safe icon loading if stored as int or mapped
+    IconData getIcon() {
+        if (map['icon'] is int) return IconData(map['icon'], fontFamily: 'MaterialIcons');
+        return iconMap[map['name']] ?? Icons.place_outlined;
+    }
+
     return PlaceTypeConfig(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
       label: map['label']?.toString() ?? '',
-      icon: iconMap[map['name']] ?? Icons.place_outlined,
-      points: _safeIntFromMap(map['points']),
-      color: Color(_safeIntFromMap(map['color']) ?? Colors.grey.value),
+      icon: getIcon(),
+      points: safeIntFromMap(map['points']),
+      color: Color(safeIntFromMap(map['color']) ?? Colors.grey.value),
       isActive: map['isActive'] != false,
-      order: _safeIntFromMap(map['order']),
+      order: safeIntFromMap(map['order']),
       createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(map['updatedAt']?.toString() ?? '') ?? DateTime.now(),
       createdBy: map['createdBy']?.toString(),
@@ -107,15 +114,28 @@ class PlaceTypeConfig {
     );
   }
 
-  static int _safeIntFromMap(dynamic value) {
+  static int safeIntFromMap(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
     if (value is num) return value.toInt();
+    if (value.toString().startsWith('Int64')) {
+       // Handle Int64 specifically if it comes as a string representation or similar object
+       // But often Int64 just needs .toInt() if it's the fixnum type.
+       // Since we don't import fixnum here, we rely on dynamic or toString parsing if needed.
+       // However, often simply value.toInt() works if it acts like a number.
+       // Let's try to parse string reference if it's really an object.
+       return int.tryParse(value.toString()) ?? 0;
+    }
     if (value is String) {
       final parsed = int.tryParse(value);
       return parsed ?? 0;
     }
-    return 0;
+    // Fallback for Int64 which might not be num but has toInt
+    try {
+      return (value as dynamic).toInt();
+    } catch (_) {
+      return 0;
+    }
   }
 }
 
@@ -124,51 +144,32 @@ class PlaceTypeConfigService {
   factory PlaceTypeConfigService() => _instance;
   PlaceTypeConfigService._internal();
 
+  final DatabaseService _dbService = DatabaseService();
   static const String _collection = 'place_type_configs';
 
   Future<List<PlaceTypeConfig>> getPlaceTypeConfigs() async {
-    try {
-      print('🔍 Loading place type configs from MongoDB...');
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) {
-        print('❌ MongoDB collection is null - database not connected');
-        throw Exception('Database connection failed');
-      }
-
-      print('🔍 Querying collection: $_collection');
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final configs = await collection.find().toList();
-      print('🔍 Found ${configs.length} raw configs in database');
       
-      // If no configs exist, create default ones
       if (configs.isEmpty) {
-        print('🔍 No configs found, creating default ones...');
         await _createDefaultPlaceTypeConfigs();
-        return await getPlaceTypeConfigs(); // Recursive call
+        final refreshed = await collection.find().toList();
+        configs.addAll(refreshed);
       }
       
-      // Sort by order field and filter active ones
-      configs.sort((a, b) => (a['order'] as int? ?? 0).compareTo(b['order'] as int? ?? 0));
+      configs.sort((a, b) => PlaceTypeConfig.safeIntFromMap(a['order']).compareTo(PlaceTypeConfig.safeIntFromMap(b['order'])));
       final result = configs.map((doc) => PlaceTypeConfig.fromMap(doc)).toList();
-      final activeConfigs = result.where((config) => config.isActive).toList();
-      
-      print('🔍 Successfully loaded ${activeConfigs.length} active place type configs');
-      return activeConfigs;
-    } catch (e) {
+      return result.where((config) => config.isActive).toList();
+    }).catchError((e) {
       print('❌ Error loading place type configs: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
-      rethrow; // Let the caller handle the error
-    }
+      return <PlaceTypeConfig>[];
+    });
   }
 
   Future<void> _createDefaultPlaceTypeConfigs() async {
-    try {
-      print('🔍 Creating default place type configs...');
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) {
-        print('❌ Cannot create default configs - collection is null');
-        return;
-      }
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final now = DateTime.now();
       final defaultConfigs = [
         PlaceTypeConfig(
@@ -217,118 +218,89 @@ class PlaceTypeConfigService {
         ),
       ];
 
-      print('🔍 Inserting ${defaultConfigs.length} default configs...');
       final configsToSave = defaultConfigs.map((config) => config.toMap()).toList();
       await collection.insertAll(configsToSave);
       print('✅ Default place type configs created successfully');
-    } catch (e) {
-      print('❌ Error creating default place type configs: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
-    }
+    }).catchError((e) {
+      print('❌ Error creating default configs: $e');
+    });
   }
 
   Future<bool> savePlaceTypeConfigs(List<PlaceTypeConfig> configs) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
-      // Clear existing configs
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       await collection.deleteMany({});
-
-      // Insert new configs
       final currentUser = AuthService.currentUser?.id;
       final now = DateTime.now();
       
       final configsToSave = configs.map((config) {
-        return config.copyWith(
-          updatedAt: now,
-          updatedBy: currentUser,
-        ).toMap();
+        return config.copyWith(updatedAt: now, updatedBy: currentUser).toMap();
       }).toList();
 
       if (configsToSave.isNotEmpty) {
         await collection.insertAll(configsToSave);
       }
-
       return true;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error saving place type configs: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> updatePlaceTypeConfig(PlaceTypeConfig config) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final currentUser = AuthService.currentUser?.id;
       final now = DateTime.now();
       
-      final configToUpdate = config.copyWith(
-        updatedAt: now,
-        updatedBy: currentUser,
-      );
-
-      final result = await collection.replaceOne(
-        {'id': config.id},
-        configToUpdate.toMap(),
-      );
-
+      final configToUpdate = config.copyWith(updatedAt: now, updatedBy: currentUser);
+      final result = await collection.replaceOne({'id': config.id}, configToUpdate.toMap());
       return result.isSuccess;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error updating place type config: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> reorderPlaceTypeConfigs(List<String> configIds) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       for (int i = 0; i < configIds.length; i++) {
         await collection.updateOne(
           {'id': configIds[i]},
           {'\$set': {'order': i}},
         );
       }
-
       return true;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error reordering place type configs: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> deletePlaceTypeConfig(String configId) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final result = await collection.deleteOne({'id': configId});
       return result.isSuccess;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error deleting place type config: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> updatePlaceTypeStatus(String configId, bool isActive) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final result = await collection.updateOne(
         {'id': configId},
         {'\$set': {'isActive': isActive}},
       );
-
       return result.isSuccess;
-    } catch (e) {
-      print('❌ Error updating place type status: $e');
+    }).catchError((e) {
+      print('❌ Error updating place type config status: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> reorderPlaceTypes(List<String> configIds) async {

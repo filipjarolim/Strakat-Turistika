@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
-import '../services/mongodb_service.dart';
+import '../services/database/database_service.dart';
 import 'login_page.dart';
 import '../services/vector_tile_provider.dart';
 import '../services/mapy_cz_download_service.dart';
@@ -529,7 +529,7 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _updateUserName(String userId, String name) async {
     try {
-      final users = await MongoDBService.getCollection('User');
+      final users = await DatabaseService().getCollection('users');
       if (users != null) {
         await users.updateOne({'_id': userId}, {
           '\$set': {

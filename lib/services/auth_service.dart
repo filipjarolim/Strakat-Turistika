@@ -2,7 +2,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'mongodb_service.dart';
+import 'database/database_service.dart';
 import '../config/google_auth_config.dart';
 
 class AuthService {
@@ -73,14 +73,12 @@ class AuthService {
       final freshUser = await _findUserByEmail(_currentUser!.email);
       
       if (freshUser != null) {
-        print('✅ Fresh user loaded from database');
-        print('   New role from DB: ${freshUser.role}');
+        // print('✅ Fresh user loaded from database');
         
         _currentUser = freshUser;
         await _saveSessionToStorage();
         
-        print('✅ User data refreshed and saved to cache');
-        print('   Final role in _currentUser: ${_currentUser!.role}');
+        // print('✅ User data refreshed and saved to cache');
         return true;
       }
       
@@ -402,176 +400,153 @@ class AuthService {
   
   // Find user by email
   static Future<User?> _findUserByEmail(String email) async {
-    return await MongoDBService.executeWithRetry(() async {
-      try {
-        // Normalize email to lowercase for case-insensitive search
-        final normalizedEmail = email.trim().toLowerCase();
-        
-        final userCollection = await MongoDBService.getCollection('users');
-        if (userCollection == null) return null;
-        
-        final users = await userCollection.find({'email': normalizedEmail}).take(1).toList();
-        if (users.isEmpty) return null;
-        
-        final userData = users.first;
-        
-        // Debug: Log raw data from database
-        print('🔍 DEBUG - RAW DATA FROM DATABASE:');
-        print('   Email: ${userData['email']}');
-        print('   Name: ${userData['name']}');
-        print('   Role: ${userData['role']}');
-        print('   Role type: ${userData['role'].runtimeType}');
-        
-        return User.fromMap(userData);
-      } catch (e) {
-        print('❌ Error finding user by email: $e');
-        // Rethrow to let retry logic handle connection errors
-        rethrow;
-      }
-    });
+    try {
+      // Normalize email to lowercase for case-insensitive search
+      final normalizedEmail = email.trim().toLowerCase();
+      
+      final userCollection = await DatabaseService().getCollection('users');
+      if (userCollection == null) return null;
+      
+      final users = await userCollection.find({'email': normalizedEmail}).take(1).toList();
+      if (users.isEmpty) return null;
+      
+      final userData = users.first;
+      return User.fromMap(userData);
+    } catch (e) {
+      print('❌ Error finding user by email: $e');
+      return null;
+    }
   }
   
   // Create new user
   static Future<User> _createUser(User user) async {
-    return await MongoDBService.executeWithRetry(() async {
-      try {
-        final userCollection = await MongoDBService.getCollection('users');
-        final accountCollection = await MongoDBService.getCollection('accounts');
-        
-        if (userCollection == null || accountCollection == null) {
-          throw Exception('Database collections not available');
-        }
-        
-        // Create user document (email is already normalized to lowercase)
-        final userDoc = {
-          '_id': user.id,
-          'email': user.email.toLowerCase(),
-          'name': user.name,
-          'image': user.image,
-          'emailVerified': DateTime.now().toIso8601String(),
-          'createdAt': DateTime.now().toIso8601String(),
-          'updatedAt': DateTime.now().toIso8601String(),
-          'role': 'UZIVATEL', // Default role according to Prisma schema
-          'isTwoFactorEnabled': false,
-        };
-        
-        await userCollection.insertOne(userDoc);
-        
-        // Create account document
-        final accountDoc = {
-          '_id': _generateId(),
-          'userId': user.id,
-          'type': 'oidc',
-          'provider': user.provider,
-          'providerAccountId': user.providerAccountId,
-          'createdAt': DateTime.now().toIso8601String(),
-          'updatedAt': DateTime.now().toIso8601String(),
-        };
-        
-        await accountCollection.insertOne(accountDoc);
-        
-        print('✅ User created successfully');
-        
-        // Load the user from database to get all fields including role
-        // Note: we can't call _findUserByEmail here effectively because it would nest retries 
-        // (though executeWithRetry handles nesting via reentrancy generally ok, it's safer to avoid)
-        // Actually executeWithRetry just calls the function. If we nest, it's fine, just more retries.
-        // But to be safe, let's just do a direct find here as we are already inside a retry block.
-        
-        final createdUsers = await userCollection.find({'email': user.email.toLowerCase()}).take(1).toList();
-        if (createdUsers.isNotEmpty) {
-           return User.fromMap(createdUsers.first);
-        }
-        
-        // Fallback: return user with role set manually
-        return User(
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          isOAuth: user.isOAuth,
-          provider: user.provider,
-          providerAccountId: user.providerAccountId,
-          role: 'UZIVATEL',
-          isTwoFactorEnabled: false,
-          dogName: null,
-        );
-        
-      } catch (e) {
-        print('❌ Error creating user: $e');
-        rethrow;
+    try {
+      final userCollection = await DatabaseService().getCollection('users');
+      final accountCollection = await DatabaseService().getCollection('accounts');
+      
+      if (userCollection == null || accountCollection == null) {
+        throw Exception('Database collections not available');
       }
-    });
+      
+      // Create user document (email is already normalized to lowercase)
+      final userDoc = {
+        '_id': user.id,
+        'email': user.email.toLowerCase(),
+        'name': user.name,
+        'image': user.image,
+        'emailVerified': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+        'role': 'UZIVATEL', // Default role according to Prisma schema
+        'isTwoFactorEnabled': false,
+      };
+      
+      await userCollection.insertOne(userDoc);
+      
+      // Create account document
+      final accountDoc = {
+        '_id': _generateId(),
+        'userId': user.id,
+        'type': 'oidc',
+        'provider': user.provider,
+        'providerAccountId': user.providerAccountId,
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+      
+      await accountCollection.insertOne(accountDoc);
+      
+      print('✅ User created successfully');
+      
+      final createdUsers = await userCollection.find({'email': user.email.toLowerCase()}).take(1).toList();
+      if (createdUsers.isNotEmpty) {
+         return User.fromMap(createdUsers.first);
+      }
+      
+      // Fallback: return user with role set manually
+      return User(
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        isOAuth: user.isOAuth,
+        provider: user.provider,
+        providerAccountId: user.providerAccountId,
+        role: 'UZIVATEL',
+        isTwoFactorEnabled: false,
+        dogName: null,
+      );
+      
+    } catch (e) {
+      print('❌ Error creating user: $e');
+      rethrow;
+    }
   }
   
   // Update user image
   static Future<void> _updateUserImage(String userId, String imageUrl) async {
-    await MongoDBService.executeWithRetry(() async {
-      try {
-        final userCollection = await MongoDBService.getCollection('users');
-        if (userCollection == null) return;
-        
-        await userCollection.updateOne(
-          {'_id': userId},
-          {
-            '\$set': {
-              'image': imageUrl,
-              'updatedAt': DateTime.now().toIso8601String(),
-            }
+    try {
+      final userCollection = await DatabaseService().getCollection('users');
+      if (userCollection == null) return;
+      
+      await userCollection.updateOne(
+        {'_id': userId},
+        {
+          '\$set': {
+            'image': imageUrl,
+            'updatedAt': DateTime.now().toIso8601String(),
           }
-        );
-        
-        print('✅ User image updated');
-      } catch (e) {
-        print('❌ Error updating user image: $e');
-        rethrow;
-      }
-    });
+        }
+      );
+      
+      print('✅ User image updated');
+    } catch (e) {
+      print('❌ Error updating user image: $e');
+      // rethrow; // Optional depending on if we want to bubble up
+    }
   }
   
   // Update user dog name
   static Future<bool> updateUserDogName(String userId, String dogName) async {
-    return await MongoDBService.executeWithRetry(() async {
-      try {
-        final userCollection = await MongoDBService.getCollection('users');
-        if (userCollection == null) return false;
-        
-        await userCollection.updateOne(
-          {'_id': userId},
-          {
-            '\$set': {
-              'dogName': dogName,
-              'updatedAt': DateTime.now().toIso8601String(),
-            }
+    try {
+      final userCollection = await DatabaseService().getCollection('users');
+      if (userCollection == null) return false;
+      
+      await userCollection.updateOne(
+        {'_id': userId},
+        {
+          '\$set': {
+            'dogName': dogName,
+            'updatedAt': DateTime.now().toIso8601String(),
           }
+        }
+      );
+      
+      // Update current user in memory
+      if (_currentUser != null && _currentUser!.id == userId) {
+        _currentUser = User(
+          id: _currentUser!.id,
+          email: _currentUser!.email,
+          name: _currentUser!.name,
+          image: _currentUser!.image,
+          isOAuth: _currentUser!.isOAuth,
+          provider: _currentUser!.provider,
+          providerAccountId: _currentUser!.providerAccountId,
+          role: _currentUser!.role,
+          isTwoFactorEnabled: _currentUser!.isTwoFactorEnabled,
+          dogName: dogName,
         );
         
-        // Update current user in memory
-        if (_currentUser != null && _currentUser!.id == userId) {
-          _currentUser = User(
-            id: _currentUser!.id,
-            email: _currentUser!.email,
-            name: _currentUser!.name,
-            image: _currentUser!.image,
-            isOAuth: _currentUser!.isOAuth,
-            provider: _currentUser!.provider,
-            providerAccountId: _currentUser!.providerAccountId,
-            role: _currentUser!.role,
-            isTwoFactorEnabled: _currentUser!.isTwoFactorEnabled,
-            dogName: dogName,
-          );
-          
-          // Save updated session
-          await _saveSessionToStorage();
-        }
-        
-        print('✅ User dog name updated');
-        return true;
-      } catch (e) {
-        print('❌ Error updating user dog name: $e');
-        rethrow;
+        // Save updated session
+        await _saveSessionToStorage();
       }
-    });
+      
+      print('✅ User dog name updated');
+      return true;
+    } catch (e) {
+      print('❌ Error updating user dog name: $e');
+      return false;
+    }
   }
   
   // Load session from local storage
@@ -584,20 +559,17 @@ class AuthService {
       if (sessionData != null) {
         final userData = jsonDecode(sessionData);
         _currentUser = User.fromMap(userData);
-        print('✅ Session loaded from storage (cached role: ${_currentUser?.role})');
+        // print('✅ Session loaded from storage (cached role: ${_currentUser?.role})');
         
         // Always refresh from database to get latest data (including role changes)
         if (_currentUser?.email != null) {
-          print('🔄 Refreshing user data from database to ensure latest info...');
+          // print('🔄 Refreshing user data from database to ensure latest info...');
           final freshUser = await _findUserByEmail(_currentUser!.email);
           if (freshUser != null) {
             _currentUser = freshUser;
             // Update cached session with fresh data
             await _saveSessionToStorage();
-            print('✅ Session refreshed with latest data from database');
-            print('   - User ID: ${freshUser.id}');
-            print('   - Email: ${freshUser.email}');
-            print('   - Role: ${freshUser.role}');
+            // print('✅ Session refreshed with latest data from database');
           }
         } else {
           print('ℹ️ Session loaded but email is null');
@@ -618,7 +590,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       if (_currentUser != null) {
         await prefs.setString('user_session', jsonEncode(_currentUser!.toMap()));
-        print('✅ Session saved to storage');
+        // print('✅ Session saved to storage');
       }
     } catch (e) {
       print('⚠️ Could not save session to storage (this is normal during development): $e');
@@ -702,16 +674,16 @@ class User {
   
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      id: map['_id'] ?? map['id'] ?? '',
-      email: map['email'] ?? '',
-      name: map['name'] ?? '',
-      image: map['image'],
-      isOAuth: map['isOAuth'] ?? true,
-      provider: map['provider'] ?? 'google',
-      providerAccountId: map['providerAccountId'] ?? '',
-      role: map['role'],
-      isTwoFactorEnabled: map['isTwoFactorEnabled'],
-      dogName: map['dogName'],
+      id: (map['_id'] ?? map['id'] ?? '').toString(),
+      email: map['email']?.toString() ?? '',
+      name: map['name']?.toString() ?? '',
+      image: map['image']?.toString(),
+      isOAuth: map['isOAuth'] == true,
+      provider: map['provider']?.toString() ?? 'google',
+      providerAccountId: map['providerAccountId']?.toString() ?? '',
+      role: map['role']?.toString(),
+      isTwoFactorEnabled: map['isTwoFactorEnabled'] == true,
+      dogName: map['dogName']?.toString(),
     );
   }
 }

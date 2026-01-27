@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/visit_data.dart';
 import '../config/app_colors.dart';
 import 'maps/shared_map_widget.dart';
+import '../utils/type_converter.dart';
 
 class RouteThumbnail extends StatelessWidget {
   final VisitData visit;
@@ -191,8 +192,8 @@ class RouteThumbnail extends StatelessWidget {
 
     return rawPoints.map((p) {
       return LatLng(
-        (p['latitude'] as num).toDouble(),
-        (p['longitude'] as num).toDouble(),
+        TypeConverter.toDoubleWithDefault(p['latitude'], 0.0),
+        TypeConverter.toDoubleWithDefault(p['longitude'], 0.0),
       );
     }).toList();
   }

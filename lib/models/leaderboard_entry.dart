@@ -23,8 +23,8 @@ class LeaderboardEntry {
     return LeaderboardEntry(
       userId: (map['firstUserId'] ?? map['_id'] ?? '').toString(),
       userName: (user != null ? (user['name'] ?? '') : displayName).toString(),
-      userImage: user != null ? user['image'] as String? : null,
-      dogName: user != null ? user['dogName'] as String? : null,
+      userImage: user?['image']?.toString(),
+      dogName: user?['dogName']?.toString(),
       totalPoints: _parsePointsDouble(map['totalPoints']) ?? 0.0,
       visitsCount: _parseInt(map['visitsCount']) ?? 0,
       lastVisitDate: map['lastVisitDate'] != null

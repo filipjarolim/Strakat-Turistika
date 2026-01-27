@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../services/mongodb_service.dart';
+import '../../services/database/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/ui/app_button.dart';
-import '../../widgets/ui/app_toast.dart';
 import '../../config/app_colors.dart';
+import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
 class SystemOverviewPage extends StatefulWidget {
   const SystemOverviewPage({super.key});
@@ -12,315 +12,294 @@ class SystemOverviewPage extends StatefulWidget {
   State<SystemOverviewPage> createState() => _SystemOverviewPageState();
 }
 
-class _SystemOverviewPageState extends State<SystemOverviewPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  bool _isTestingConnection = false;
-  String? _connectionStatus;
-  Color _connectionColor = Colors.grey;
+class _SystemOverviewPageState extends State<SystemOverviewPage> {
+  bool _isLoading = false;
+  String _statusMessage = 'Ready';
+  
+  // Data State
+  bool _isConnected = false;
+  int _userCount = 0;
+  int _visitCount = 0;
+  String _pingLatency = '--';
+  List<String> _errorLogs = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _testConnection();
+    _refreshSystemStatus();
   }
 
-  Future<void> _testConnection() async {
+  Future<void> _refreshSystemStatus() async {
+    if (_isLoading) return;
+    
     setState(() {
-      _isTestingConnection = true;
-      _connectionStatus = 'Testing...';
-      _connectionColor = Colors.orange;
+      _isLoading = true;
+      _statusMessage = 'Checking connection...';
+      _errorLogs.clear();
     });
 
-    final isConnected = await MongoDBService.testConnection();
+    try {
+      final dbService = DatabaseService();
+      
+      // 1. Check Connection
+      final connected = await dbService.connect();
+      setState(() => _isConnected = connected);
+      
+      if (!connected) {
+        throw Exception('Failed to connect to MongoDB');
+      }
 
-    if (mounted) {
+      // 2. Ping Latency
+      setState(() => _statusMessage = 'Pinging database...');
+      final stopwatch = Stopwatch()..start();
+      await dbService.db?.executeDbCommand(mongo.DbCommand.createPingCommand(dbService.db!));
+      stopwatch.stop();
+      setState(() => _pingLatency = '${stopwatch.elapsedMilliseconds}ms');
+
+      // 3. Check Users
+      setState(() => _statusMessage = 'Counting users...');
+      final userCol = await dbService.getCollection('users');
+      final uCount = await userCol?.count() ?? 0;
+      setState(() => _userCount = uCount);
+
+      // 4. Check Visits (Real Data)
+      setState(() => _statusMessage = 'Counting visits...');
+      final visitCol = await dbService.getCollection('visits');
+      final vCount = await visitCol?.count() ?? 0;
+      setState(() => _visitCount = vCount);
+      
+      setState(() => _statusMessage = 'System Normal');
+
+    } catch (e) {
       setState(() {
-        _isTestingConnection = false;
-        _connectionStatus = isConnected ? 'Connected' : 'Disconnected';
-        _connectionColor = isConnected ? Colors.green : Colors.red;
+         _statusMessage = 'Error detected';
+         _errorLogs.add(e.toString());
       });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text(
-          'System Overview',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: AppColors.primary,
-          tabs: const [
-            Tab(text: 'General'),
-            Tab(text: 'Database Data'), // Renamed to "Database Data" to imply schema/structure
-            Tab(text: 'Endpoints'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildGeneralTab(),
-          _buildDatabaseSchemaTab(), 
-          _buildEndpointsTab(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGeneralTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Connection Status'),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.circle, color: _connectionColor, size: 16),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MongoDB',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800]),
-                    ),
-                    Text(
-                      _connectionStatus ?? 'Unknown',
-                      style: TextStyle(color: _connectionColor, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                AppButton(
-                  onPressed: _testConnection,
-                  text: 'Test',
-                  type: AppButtonType.outline,
-                  size: AppButtonSize.small,
-                  isLoading: _isTestingConnection,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionHeader('Environment'),
-          _buildInfoCard([
-            _buildInfoRow('App ID', 'com.strakataturistika.app'),
-            _buildInfoRow('Auth User', AuthService.currentUser?.email ?? 'Not Logged In'),
-            _buildInfoRow('Role', AuthService.currentUser?.role ?? 'N/A'),
-            _buildInfoRow('Dart Version', '3.x'),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDatabaseSchemaTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader('Collections'),
-        _buildSchemaCard(
-          'User', 
-          'Stores user profiles and roles',
-          [
-            'email (String, Unique)',
-            'name (String)',
-            'role (Enum: ADMIN, UZIVATEL)',
-            'provider (String)',
-            'dogName (String?)',
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSchemaCard(
-          'VisitData', 
-          'Stores trips and routes',
-          [
-            'userId (Ref -> User)',
-            'state (Enum: APPROVED, PENDING...)',
-            'points (Double)',
-            'geoJson (Object)',
-            'photos (Array)',
-            'seasonYear (Int)',
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSchemaCard(
-          'Account', 
-          'Stores OAuth links',
-          [
-            'userId (Ref -> User)',
-            'provider (String)',
-            'providerAccountId (String)',
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEndpointsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSectionHeader('Active Services'),
-        _buildEndpointCard('MongoDBService', 'Singleton', 'Direct DB Connection (Atlas)'),
-        const SizedBox(height: 12),
-        _buildEndpointCard('AuthService', 'Static', 'Google Sign-In, Session Management'),
-        const SizedBox(height: 12),
-        _buildEndpointCard('VisitDataService', 'Singleton', 'CRUD, Aggregation Pipelines'),
-        const SizedBox(height: 12),
-        _buildEndpointCard('GpsServices', 'Singleton', 'Location, Sensors, GPX Recording'),
-        const SizedBox(height: 12),
-        _buildEndpointCard('CloudinaryService', 'Static', 'Image Hosting (Cloudinary API)'),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF111827),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSchemaCard(String title, String subtitle, List<String> fields) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+             icon: const Icon(Icons.refresh), 
+             onPressed: _isLoading ? null : _refreshSystemStatus,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.dataset_rounded, color: Colors.blue, size: 20),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status Header
+            _buildStatusHeader(),
+            const SizedBox(height: 24),
+            
+            // Critical Metrics Grid
+            Text(
+              'Database metrics'.toUpperCase(), 
+              style: TextStyle(
+                fontSize: 12, 
+                fontWeight: FontWeight.w900, 
+                color: Colors.grey[800],
+                letterSpacing: 0.8,
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            const SizedBox(height: 16),
+            LayoutBuilder(builder: (context, constraints) {
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  _buildMetricCard(
+                    'Connection', 
+                    _isConnected ? 'Active' : 'Offline', 
+                    _isConnected ? Colors.green : Colors.red,
+                    icon: Icons.link
+                  ),
+                  _buildMetricCard(
+                    'Latency', 
+                    _pingLatency, 
+                    Colors.orange,
+                    icon: Icons.speed
+                  ),
+                  _buildMetricCard(
+                    'Total Users', 
+                    _userCount.toString(), 
+                    Colors.blue,
+                    icon: Icons.people
+                  ),
+                  _buildMetricCard(
+                    'Total Visits', 
+                    _visitCount.toString(), 
+                    Colors.purple,
+                    icon: Icons.map
+                  ),
                 ],
+              );
+            }),
+
+            const SizedBox(height: 32),
+            
+            // Quick Actions
+            Text(
+              'Quick actions'.toUpperCase(), 
+              style: TextStyle(
+                fontSize: 12, 
+                fontWeight: FontWeight.w900, 
+                color: Colors.grey[800],
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                   AppButton(
+                     text: 'Force Reconnect',
+                     onPressed: _isLoading ? null : () async {
+                       await DatabaseService().close();
+                       _refreshSystemStatus();
+                     },
+                     type: AppButtonType.outline,
+                   ),
+                   const SizedBox(height: 12),
+                   const Text('Environment: Production (Atlas)', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Error Logs Console
+            if (_errorLogs.isNotEmpty) ...[
+               const Text('Debug Console', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red)),
+               const SizedBox(height: 8),
+               Container(
+                 width: double.infinity,
+                 padding: const EdgeInsets.all(12),
+                 decoration: BoxDecoration(
+                   color: Colors.black87,
+                   borderRadius: BorderRadius.circular(8),
+                 ),
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: _errorLogs.map((e) => Text(
+                     '> $e', 
+                     style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace', fontSize: 12)
+                   )).toList(),
+                 ),
+               )
+            ],
+            
+            if (_isLoading)
+               Center(child: Padding(
+                 padding: const EdgeInsets.all(20.0),
+                 child: Text(_statusMessage, style: const TextStyle(color: Colors.grey)),
+               )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.security_rounded, color: Color(0xFF2E7D32), size: 32),
+          ),
+          const SizedBox(width: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'STAV SYSTÉMU'.toUpperCase(), 
+                style: TextStyle(
+                  color: Colors.grey[500], 
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _statusMessage, 
+                style: const TextStyle(
+                  color: Color(0xFF111827), 
+                  fontSize: 22, 
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text('Fields:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey)),
-          const SizedBox(height: 8),
-          ...fields.map((f) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              children: [
-                const Icon(Icons.circle, size: 6, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(f, style: const TextStyle(fontSize: 13, fontFamily: 'monospace')),
-              ],
-            ),
-          )),
         ],
       ),
     );
   }
 
-  Widget _buildEndpointCard(String name, String type, String desc) {
+  Widget _buildMetricCard(String title, String value, Color color, {required IconData icon}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: 160,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.purple[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.api_rounded, color: Colors.purple, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                Text(desc, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-              ],
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 16),
+          Text(
+            value, 
+            style: const TextStyle(
+              fontSize: 22, 
+              fontWeight: FontWeight.w900, 
+              color: Color(0xFF111827),
+              letterSpacing: -0.5,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(6),
+          const SizedBox(height: 4),
+          Text(
+            title.toUpperCase(), 
+            style: TextStyle(
+              fontSize: 10, 
+              fontWeight: FontWeight.w800, 
+              color: Colors.grey[500],
+              letterSpacing: 0.5,
             ),
-            child: Text(type, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[700])),
           ),
         ],
       ),

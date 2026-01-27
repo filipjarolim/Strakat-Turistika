@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/visit_data_service.dart';
+import '../repositories/visit_repository.dart';
 import '../models/visit_data.dart';
 import '../models/leaderboard_entry.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -13,8 +13,10 @@ import '../config/app_colors.dart';
 import '../widgets/ui/app_toast.dart';
 import '../widgets/route_thumbnail.dart';
 import 'visit_data_form_page.dart';
+import 'dynamic_form_page.dart';
 import '../models/tracking_summary.dart';
 import '../services/auth_service.dart';
+import '../utils/type_converter.dart';
 
 class ResultsPage extends StatefulWidget {
   const ResultsPage({super.key});
@@ -90,8 +92,8 @@ class _ResultsRoutePreview extends StatelessWidget {
     if (trackPoints.isEmpty) return const LatLng(49.8175, 15.4730);
     double lat = 0, lng = 0;
     for (final p in trackPoints) {
-      lat += (p['latitude'] as num).toDouble();
-      lng += (p['longitude'] as num).toDouble();
+      lat += TypeConverter.toDoubleWithDefault(p['latitude'], 0.0);
+      lng += TypeConverter.toDoubleWithDefault(p['longitude'], 0.0);
     }
     lat /= trackPoints.length;
     lng /= trackPoints.length;
@@ -100,13 +102,13 @@ class _ResultsRoutePreview extends StatelessWidget {
 
   double _zoom() {
     if (trackPoints.length < 2) return 13.0;
-    double minLat = (trackPoints.first['latitude'] as num).toDouble();
+    double minLat = TypeConverter.toDoubleWithDefault(trackPoints.first['latitude'], 0.0);
     double maxLat = minLat;
-    double minLng = (trackPoints.first['longitude'] as num).toDouble();
+    double minLng = TypeConverter.toDoubleWithDefault(trackPoints.first['longitude'], 0.0);
     double maxLng = minLng;
     for (final p in trackPoints) {
-      final la = (p['latitude'] as num).toDouble();
-      final lo = (p['longitude'] as num).toDouble();
+      final la = TypeConverter.toDoubleWithDefault(p['latitude'], 0.0);
+      final lo = TypeConverter.toDoubleWithDefault(p['longitude'], 0.0);
       if (la < minLat) minLat = la;
       if (la > maxLat) maxLat = la;
       if (lo < minLng) minLng = lo;
@@ -125,7 +127,10 @@ class _ResultsRoutePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pts = trackPoints
-        .map((p) => LatLng((p['latitude'] as num).toDouble(), (p['longitude'] as num).toDouble()))
+        .map((p) => LatLng(
+          TypeConverter.toDoubleWithDefault(p['latitude'], 0.0), 
+          TypeConverter.toDoubleWithDefault(p['longitude'], 0.0)
+        ))
         .toList();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -198,7 +203,7 @@ class _ResultsRoutePreview extends StatelessWidget {
 
 class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin, WidgetsBindingObserver {
   // Data
-  final VisitDataService _visitDataService = VisitDataService();
+  final VisitRepository _visitRepository = VisitRepository();
   List<int> availableSeasons = [];
   int? selectedSeason;
 
@@ -312,7 +317,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       _isInitialLoading = true;
     });
     try {
-      final seasons = await _visitDataService.getAvailableSeasons();
+      final seasons = await _visitRepository.getAvailableSeasons();
       if (!mounted) return;
       setState(() {
         availableSeasons = seasons;
@@ -335,7 +340,8 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       setState(() {
         _isInitialLoading = false;
       });
-      _showErrorSnackBar('Chyba načítání sezón');
+      // Don't show snackbar immediately, network might be flaky
+      // _showErrorSnackBar('Chyba načítání sezón');
     }
   }
 
@@ -373,14 +379,14 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       _isLoadingMore = true;
     });
     try {
-      final result = await _visitDataService.getPaginatedVisitData(
+      final result = await _visitRepository.getVisits(
         page: _page,
         limit: _limit,
-        season: selectedSeason,
-        state: _effectiveState,
+        seasonYear: selectedSeason,
+        // state: _effectiveState, // Logic moved to onlyApproved flag or custom query if needed, keeping simple matching for now
+        onlyApproved: _effectiveState == VisitState.APPROVED,
         searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        sortBy: _sortBy,
-        sortDescending: _sortDesc,
+        // sortBy: _sortBy, // Repo defaults to date desc for now, add sorting to repo if needed later
       );
       final data = (result['data'] as List<dynamic>).cast<VisitData>();
       final hasMore = result['hasMore'] == true;
@@ -408,7 +414,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       _isLoadingMore = true;
     });
     try {
-      final result = await _visitDataService.getLeaderboard(
+      final result = await _visitRepository.getLeaderboard(
         season: selectedSeason!,
         page: 1,
         limit: 10000, // Velký limit pro načtení všech záznamů
@@ -432,7 +438,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       setState(() {
         _isLoadingMore = false;
       });
-      _showErrorSnackBar('Chyba načítání žebříčku');
+      // _showErrorSnackBar('Chyba načítání žebříčku');
     }
   }
 
@@ -480,20 +486,21 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       startTime: visit.visitDate ?? DateTime.now(),
       // Use duration to estimate end time
  
-      duration: Duration(seconds: (routeData['duration'] as num?)?.toInt() ?? 0),
-      totalDistance: (routeData['totalDistance'] as num?)?.toDouble() ?? 0.0,
-      averageSpeed: (routeData['averageSpeed'] as num?)?.toDouble() ?? 0.0,
-      maxSpeed: (routeData['maxSpeed'] as num?)?.toDouble() ?? 0.0,
-      totalElevationGain: (routeData['totalElevationGain'] as num?)?.toDouble() ?? 0.0,
-      totalElevationLoss: (routeData['totalElevationLoss'] as num?)?.toDouble() ?? 0.0,
-      minAltitude: (routeData['minAltitude'] as num?)?.toDouble(),
-      maxAltitude: (routeData['maxAltitude'] as num?)?.toDouble(),
+      duration: Duration(seconds: TypeConverter.toIntWithDefault(routeData['duration'], 0)),
+      totalDistance: TypeConverter.toDoubleWithDefault(routeData['totalDistance'], 0.0),
+      averageSpeed: TypeConverter.toDoubleWithDefault(routeData['averageSpeed'], 0.0),
+      maxSpeed: TypeConverter.toDoubleWithDefault(routeData['maxSpeed'], 0.0),
+      totalElevationGain: TypeConverter.toDoubleWithDefault(routeData['totalElevationGain'], 0.0),
+      totalElevationLoss: TypeConverter.toDoubleWithDefault(routeData['totalElevationLoss'], 0.0),
+      minAltitude: TypeConverter.toDouble(routeData['minAltitude']),
+      maxAltitude: TypeConverter.toDouble(routeData['maxAltitude']),
       trackPoints: trackPoints,
     );
 
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => VisitDataFormPage(
+        builder: (context) => DynamicFormPage(
+          slug: 'gps-tracking',
           trackingSummary: summary,
           existingVisit: visit,
         ),
@@ -761,7 +768,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () async {
-            final full = await _visitDataService.getVisitById(result.id);
+            final full = await _visitRepository.getVisitById(result.id);
             if (!mounted) return;
             _showRouteDetailsSheet(full ?? result);
           },

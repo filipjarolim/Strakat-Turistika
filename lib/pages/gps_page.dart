@@ -30,6 +30,8 @@ import 'package:strakataturistikaandroidapp/services/gps_services.dart';
 import 'package:strakataturistikaandroidapp/services/scoring_config_service.dart';
 import 'package:strakataturistikaandroidapp/services/error_recovery_service.dart';
 import 'package:strakataturistikaandroidapp/pages/visit_data_form_page.dart';
+import 'package:strakataturistikaandroidapp/pages/dynamic_upload_page.dart';
+import 'package:strakataturistikaandroidapp/pages/dynamic_form_page.dart';
 
 import 'package:strakataturistikaandroidapp/config/app_colors.dart';
 import 'package:strakataturistikaandroidapp/widgets/ui/glass_ui.dart';
@@ -938,7 +940,7 @@ class _GpsPageState extends State<GpsPage> with TickerProviderStateMixin {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => VisitDataFormPage(trackingSummary: summary),
+                          builder: (context) => const DynamicUploadPage(slug: 'gps-tracking'),
                         ),
                       );
                     },

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/visit_data.dart';
-import '../services/visit_data_service.dart';
+import '../repositories/visit_repository.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
@@ -9,6 +9,7 @@ import 'admin_widgets.dart';
 import '../widgets/ui/glass_ui.dart';
 import '../widgets/ui/app_button.dart';
 import '../widgets/ui/app_toast.dart';
+import '../utils/type_converter.dart';
 
 class AdminControlTab {
   static Widget build({
@@ -53,43 +54,43 @@ class AdminControlTab {
     
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
-      color: const Color(0xFF4CAF50),
+      color: const Color(0xFF2E7D32),
       backgroundColor: Colors.white,
       child: ListView.builder(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(bottom: 100),
         itemCount: visitDataList.length + 2, // +2 for stats card and control panel
         itemBuilder: (context, index) {
-          // Stats card matching results_page
+          // Stats card
           if (index == 0) {
             return GlassCard(
               margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               child: Row(
                 children: [
                   Expanded(
                     child: _buildStatItem(
-                      icon: Icons.pending_actions,
-                      label: 'Čeká na schválení',
+                      icon: Icons.pending_actions_rounded,
+                      label: 'ČEKÁ',
                       value: '$pendingCount',
-                      color: Colors.orange[700]!, // More visible on white/glass
+                      color: Colors.orange[800]!,
                     ),
                   ),
-                  Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.2)),
+                  Container(width: 1, height: 40, color: const Color(0xFFF3F4F6)),
                   Expanded(
                     child: _buildStatItem(
-                      icon: Icons.assignment_turned_in,
-                      label: 'Celkem záznamů',
+                      icon: Icons.assignment_turned_in_rounded,
+                      label: 'CELKEM',
                       value: '${visitDataList.length}',
-                      color: Colors.blue[700]!,
+                      color: Colors.blue[800]!,
                     ),
                   ),
-                  Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.2)),
+                  Container(width: 1, height: 40, color: const Color(0xFFF3F4F6)),
                   Expanded(
                     child: _buildStatItem(
-                      icon: Icons.star_outline,
-                      label: 'Celkem bodů',
+                      icon: Icons.stars_rounded,
+                      label: 'BODY',
                       value: totalPoints.toStringAsFixed(0),
-                      color: Colors.amber[700]!,
+                      color: Colors.amber[800]!,
                     ),
                   ),
                 ],
@@ -124,10 +125,6 @@ class AdminControlTab {
           final visitIndex = index - 2;
           final visitData = visitDataList[visitIndex];
           final isSelected = selectedVisitIds.contains(visitData.id);
-          final userName = visitData.displayName ?? 
-                          visitData.user?['name'] ?? 
-                          visitData.extraPoints['fullName'] ?? 
-                          'Neznámý uživatel';
           
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -154,23 +151,25 @@ class AdminControlTab {
   }) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 8),
+        Icon(icon, color: color, size: 22),
+        const SizedBox(height: 10),
         Text(
           value,
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: const Color(0xFF111827),
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: color.withValues(alpha: 0.9),
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: Colors.grey[500],
+            letterSpacing: 1.0,
           ),
           textAlign: TextAlign.center,
         ),
@@ -365,6 +364,11 @@ class AdminControlTab {
             ],
           ),
         ],
+        
+        // Ensure migration button is available for fixing data issues
+        const SizedBox(height: 12),
+        AdminWidgets.buildMigrationButton(),
+
       ],
     );
   }
@@ -487,13 +491,10 @@ class AdminControlTab {
   }
 
 
-
-
-
   static Future<void> _showApproveConfirmation(
     BuildContext context,
     VisitData visitData,
-    VisitDataService visitDataService,
+    VisitRepository visitRepository,
     VoidCallback onRefresh,
   ) async {
     final confirmed = await showDialog<bool>(
@@ -566,7 +567,7 @@ class AdminControlTab {
     );
 
     if (confirmed == true) {
-      await visitDataService.updateVisitDataState(
+      await visitRepository.updateVisitState(
         visitData.id,
         VisitState.APPROVED,
       );
@@ -581,7 +582,7 @@ class AdminControlTab {
   static Future<void> _showRejectConfirmation(
     BuildContext context,
     VisitData visitData,
-    VisitDataService visitDataService,
+    VisitRepository visitRepository,
     VoidCallback onRefresh,
   ) async {
     final confirmed = await showDialog<bool>(
@@ -654,7 +655,7 @@ class AdminControlTab {
     );
 
     if (confirmed == true) {
-      await visitDataService.updateVisitDataState(
+      await visitRepository.updateVisitState(
         visitData.id,
         VisitState.REJECTED,
         rejectionReason: 'Odmítnuto adminem',
@@ -678,8 +679,8 @@ class AdminControlTab {
     if (track is List) {
       for (final item in track) {
         if (item is Map) {
-          final lat = (item['latitude'] ?? item['lat'] ?? item['y']) as num?;
-          final lon = (item['longitude'] ?? item['lng'] ?? item['lon'] ?? item['x']) as num?;
+          final lat = TypeConverter.toDouble(item['latitude'] ?? item['lat'] ?? item['y']);
+          final lon = TypeConverter.toDouble(item['longitude'] ?? item['lng'] ?? item['lon'] ?? item['x']);
           if (lat != null && lon != null) {
             pts.add(LatLng(lat.toDouble(), lon.toDouble()));
           }

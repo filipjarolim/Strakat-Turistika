@@ -14,11 +14,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notifications_service.dart';
 import 'pages/webview_page.dart';
-import 'services/mongodb_service.dart';
+import 'services/database/database_service.dart';
 
 
 import 'services/auth_service.dart';
-import 'services/visit_data_service.dart';
 
 import 'pages/onboarding/auth_gate.dart';
 import 'pages/login_page.dart';
@@ -62,7 +61,7 @@ void main() async {
   
   // Initialize MongoDB connection
   try {
-    await MongoDBService.initialize();
+    await DatabaseService().connect();
   } catch (e, st) {
     FirebaseCrashlytics.instance.recordError(e, st, reason: 'Mongo init failed');
   }
@@ -245,12 +244,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin, 
 
       
       // Test if database is still connected
-      final isConnected = await MongoDBService.testConnection();
+      final isConnected = DatabaseService().isConnected;
       
       if (!isConnected) {
-        await MongoDBService.reconnect();
-
-
+        await DatabaseService().close();
+        await DatabaseService().connect();
       }
       
       // Always refresh user data from database when app resumes

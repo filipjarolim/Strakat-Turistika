@@ -163,7 +163,7 @@ class VectorTileProvider extends TileProvider {
       if (box == null) return;
       
       await box.put(tileKey, data);
-      print('🗺️ Cached vector tile: $tileKey ($layer)');
+      // print('🗺️ Cached vector tile: $tileKey ($layer)');
     } catch (e) {
       print('❌ Failed to cache vector tile: $e');
     }

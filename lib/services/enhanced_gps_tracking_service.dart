@@ -132,7 +132,7 @@ class EnhancedGPSTrackingService {
       _updateStatistics(position);
       // Update last valid position so next point uses this one for distance/time
       _lastValidPosition = position;
-      print('GPS: Force added track point - total points: ${_trackPoints.length}');
+      // print('GPS: Force added track point - total points: ${_trackPoints.length}');
     }
   }
   
@@ -178,7 +178,7 @@ class EnhancedGPSTrackingService {
       speedAccuracy: 0.0,
     );
     
-    print('GPS: Received location from background service - lat: ${position.latitude}, lon: ${position.longitude}');
+    // print('GPS: Received location from background service - lat: ${position.latitude}, lon: ${position.longitude}');
     onPositionUpdate(position);
   }
   
@@ -259,10 +259,10 @@ class EnhancedGPSTrackingService {
     
     // Summary
     final locationAlwaysStatus = await Permission.locationAlways.status;
-    print('GPS: Permission summary:');
-    print('  - Basic location: ${permission != LocationPermission.denied ? "✓" : "✗"}');
-    print('  - Background location: ${locationAlwaysStatus.isGranted ? "✓" : "✗"}');
-    print('  - Battery optimization: ${batteryStatus.isGranted ? "✓" : "✗"}');
+    // print('GPS: Permission summary:');
+    // print('  - Basic location: ${permission != LocationPermission.denied ? "✓" : "✗"}');
+    // print('  - Background location: ${locationAlwaysStatus.isGranted ? "✓" : "✗"}');
+    // print('  - Battery optimization: ${batteryStatus.isGranted ? "✓" : "✗"}');
     
     // Return true if we have at least basic location permission
     return permission == LocationPermission.whileInUse || permission == LocationPermission.always;
@@ -300,7 +300,7 @@ class EnhancedGPSTrackingService {
     _stationaryCandidateSince = null;
     _consecutiveUnlockEligible = 0;
     
-    print('GPS: Tracking started with strict accuracy filtering');
+    // print('GPS: Tracking started with strict accuracy filtering');
     
     FirebaseCrashlytics.instance.log('Enhanced GPS Tracking started');
     
@@ -559,7 +559,7 @@ class EnhancedGPSTrackingService {
   
   // Advanced position processing with Kalman filtering
   void onPositionUpdate(Position position) {
-    print('GPS: Raw position received - lat: ${position.latitude}, lon: ${position.longitude}, accuracy: ${position.accuracy}m');
+    // print('GPS: Raw position received - lat: ${position.latitude}, lon: ${position.longitude}, accuracy: ${position.accuracy}m');
     _rawPositions.add(position);
     _lastRawAt = DateTime.now();
     
@@ -586,11 +586,11 @@ class EnhancedGPSTrackingService {
       // Ensure notification reflects fresh stats
       // ignore: discarded_futures
       _updateTrackingNotification();
-      print('GPS: Track point added - total points: ${_trackPoints.length}');
+      // print('GPS: Track point added - total points: ${_trackPoints.length}');
       // Adapt settings based on current motion state
       _maybeUpdateAdaptiveSettings(filteredPosition);
     } else {
-      print('GPS: Position filtered out by validation');
+      // print('GPS: Position filtered out by validation');
     }
   }
   

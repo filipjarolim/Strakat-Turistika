@@ -2,28 +2,31 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/visit_data.dart';
 import '../models/place_type_config.dart';
-import '../services/visit_data_service.dart';
+import '../repositories/visit_repository.dart';
 import '../services/scoring_config_service.dart';
 import '../services/form_field_service.dart' hide FormField;
 import '../services/form_field_service.dart' as form_service;
-
 import '../services/auth_service.dart';
-import '../widgets/admin_widgets.dart';
-import '../widgets/admin_tabs.dart';
-import '../widgets/admin_dialogs.dart';
-import '../widgets/admin_utils.dart';
-import '../widgets/admin_utils.dart';
-import '../services/admin_services.dart';
-import '../widgets/ui/glass_ui.dart';
-import '../widgets/ui/app_button.dart';
-import '../widgets/ui/app_toast.dart';
 import 'admin/system_overview_page.dart';
-import 'package:flutter_map/flutter_map.dart';
+import '../widgets/admin_widgets.dart';
+import '../widgets/admin_dialogs.dart';
+import '../widgets/admin_tabs.dart';
+import '../widgets/ui/app_toast.dart';
+import '../widgets/ui/app_button.dart';
+import '../widgets/ui/glass_ui.dart';
 import '../widgets/maps/shared_map_widget.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'admin/admin_dashboard_tab.dart';
+import 'admin/admin_raw_data_tab.dart';
+
+enum AdminSubPage { hub, overview, review, settings, rawData }
+
+// ...
+
 
 class AdminReviewPage extends StatefulWidget {
   const AdminReviewPage({Key? key}) : super(key: key);
@@ -33,7 +36,7 @@ class AdminReviewPage extends StatefulWidget {
 }
 
 class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderStateMixin {
-  final VisitDataService _visitDataService = VisitDataService();
+  final VisitRepository _visitRepository = VisitRepository();
   final ScoringConfigService _scoringService = ScoringConfigService();
   final FormFieldService _formFieldService = FormFieldService();
   
@@ -42,6 +45,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
   VisitState _selectedFilter = VisitState.PENDING_REVIEW;
   bool _isLoading = true;
   int _tabIndex = 0;
+  AdminSubPage _currentSubPage = AdminSubPage.hub;
   
   // Search and filters
   String _searchQuery = '';
@@ -88,7 +92,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _fadeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     _slideController = AnimationController(duration: const Duration(milliseconds: 400), vsync: this);
     
@@ -111,24 +115,42 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     super.dispose();
   }
 
-  // Core data loading methods
   Future<void> _loadVisitData() async {
     setState(() => _isLoading = true);
     try {
-      final result = await _visitDataService.getPaginatedVisitData(
+      // Use repository. Default getVisits returns map {data: [], total: int}
+      // state param is not directly supported in getVisits for specific enum, only 'approved' boolean.
+      // We fetch all non-approved (or all) and filter.
+      final result = await _visitRepository.getVisits(
         page: 1,
-        limit: 100,
-        state: _selectedFilter,
+        limit: 100, // Or higher if needed
         searchQuery: _searchQuery,
-        sortBy: _sortBy,
-        sortDescending: _sortDesc,
+        onlyApproved: false,
       );
       
+      var visits = (result['data'] as List<dynamic>).cast<VisitData>();
+      
+      // Local filter for state
+      if (_selectedFilter != null) {
+         visits = visits.where((v) => v.state == _selectedFilter).toList();
+      }
+      
+      // Local sort if needed (Repository does date desc by default)
+      if (_sortBy == 'visitDate') {
+        visits.sort((a, b) {
+           final d1 = a.visitDate ?? DateTime(2000);
+           final d2 = b.visitDate ?? DateTime(2000);
+           return _sortDesc ? d2.compareTo(d1) : d1.compareTo(d2);
+        });
+      } else if (_sortBy == 'points') {
+         visits.sort((a, b) => _sortDesc ? b.points.compareTo(a.points) : a.points.compareTo(b.points));
+      }
+
       if (mounted) {
-      setState(() {
-          _visitDataList = (result['data'] as List<dynamic>).cast<VisitData>();
-        _isLoading = false;
-      });
+        setState(() {
+          _visitDataList = visits;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -344,7 +366,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     if (_selectedVisitIds.isEmpty) return;
     
     try {
-      await AdminServices.bulkUpdateVisitStates(_selectedVisitIds, VisitState.APPROVED);
+      await _visitRepository.bulkUpdateVisitStates(_selectedVisitIds, VisitState.APPROVED);
       _showSuccessSnackBar('${_selectedVisitIds.length} návštěv bylo schváleno');
       _logAdminAction('Bulk approved ${_selectedVisitIds.length} visits');
       
@@ -362,7 +384,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     if (_selectedVisitIds.isEmpty) return;
     
     try {
-      await AdminServices.bulkUpdateVisitStates(_selectedVisitIds, VisitState.REJECTED);
+      await _visitRepository.bulkUpdateVisitStates(_selectedVisitIds, VisitState.REJECTED);
       _showSuccessSnackBar('${_selectedVisitIds.length} návštěv bylo odmítnuto');
       _logAdminAction('Bulk rejected ${_selectedVisitIds.length} visits');
       
@@ -733,51 +755,53 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
             // Handle bar
             Container(
               margin: const EdgeInsets.only(top: 12),
-              width: 40,
+              width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
+                color: const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             // Header
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
               child: Row(
                 children: [
                   Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(24),
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
-                      Icons.history,
-                      color: Color(0xFF3B82F6),
+                      Icons.history_rounded,
+                      color: Color(0xFF2E7D32),
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Historie aktivit',
                           style: TextStyle(
                             fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w900,
                             color: Color(0xFF111827),
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Přehled všech admin akcí',
+                          'PŘEHLED VŠECH ADMIN AKCÍ'.toUpperCase(),
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF6B7280),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.grey[500],
+                            letterSpacing: 0.8,
                           ),
                         ),
                       ],
@@ -786,49 +810,50 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
                 ],
               ),
             ),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
             // Content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildActivityItem(
-                      icon: Icons.check_circle,
+                      icon: Icons.check_circle_rounded,
                       title: 'Schválení návštěvy',
                       description: 'Návštěva "Krkonoše - Sněžka" byla schválena',
                       time: '2 hodiny zpět',
                       color: const Color(0xFF10B981),
                     ),
                     _buildActivityItem(
-                      icon: Icons.cancel,
+                      icon: Icons.cancel_rounded,
                       title: 'Odmítnutí návštěvy',
                       description: 'Návštěva "Praha - Petřín" byla odmítnuta',
                       time: '4 hodiny zpět',
                       color: const Color(0xFFEF4444),
                     ),
                     _buildActivityItem(
-                      icon: Icons.edit,
+                      icon: Icons.edit_rounded,
                       title: 'Úprava konfigurace',
                       description: 'Bodování bylo upraveno na 2.5 bodů/km',
                       time: '1 den zpět',
                       color: const Color(0xFF3B82F6),
                     ),
                     _buildActivityItem(
-                      icon: Icons.add,
+                      icon: Icons.add_rounded,
                       title: 'Přidání typu místa',
                       description: 'Nový typ místa "Rozhledna" byl přidán',
                       time: '2 dny zpět',
                       color: const Color(0xFF8B5CF6),
                     ),
                     _buildActivityItem(
-                      icon: Icons.person_add,
+                      icon: Icons.person_add_rounded,
                       title: 'Registrace uživatele',
                       description: 'Nový uživatel se zaregistroval',
                       time: '3 dny zpět',
                       color: const Color(0xFFF59E0B),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -847,25 +872,25 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     required Color color,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -874,24 +899,28 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
                   title,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF6B7280),
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9CA3AF),
+                  time.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.grey[400],
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -910,7 +939,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     // Load full visit with route if needed
     VisitData fullVisit = visit;
     try {
-      final loaded = await _visitDataService.getVisitById(visit.id);
+      final loaded = await _visitRepository.getVisitById(visit.id);
       if (loaded != null) fullVisit = loaded;
     } catch (_) {}
 
@@ -1345,7 +1374,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
   // Review actions
   Future<void> _approveVisit(String visitId) async {
     try {
-      await _visitDataService.updateVisitState(visitId, VisitState.APPROVED);
+      await _visitRepository.updateVisitState(visitId, VisitState.APPROVED);
       _logAdminAction('Approved visit: $visitId');
       _showSuccessSnackBar('Návštěva byla schválena');
       _loadVisitData();
@@ -1356,7 +1385,7 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
 
   Future<void> _rejectVisit(String visitId) async {
     try {
-      await _visitDataService.updateVisitState(visitId, VisitState.REJECTED);
+      await _visitRepository.updateVisitState(visitId, VisitState.REJECTED);
       _logAdminAction('Rejected visit: $visitId');
       _showSuccessSnackBar('Návštěva byla zamítnuta');
       _loadVisitData();
@@ -1407,216 +1436,365 @@ class _AdminReviewPageState extends State<AdminReviewPage> with TickerProviderSt
     return GlassScaffold(
       body: Column(
         children: [
-          GlassHeader(
-            title: 'Admin Panel',
-            subtitle: 'Správa návštěv a konfigurace',
-            leading: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back, size: 24, color: Color(0xFF1A1A1A)),
-            ),
-            trailing: IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SystemOverviewPage()),
-                );
-              },
-              icon: const Icon(Icons.info_outline, size: 24, color: Color(0xFF1A1A1A)),
-              tooltip: 'System Overview',
-            ),
-          ),
-          
-          // Custom Glass Tab Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.grey[200], // Base for tracking
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                children: [
-                  // Animated pill
-                  AnimatedAlign(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutCubic,
-                    alignment: _tabIndex == 0 ? Alignment.centerLeft : Alignment.centerRight,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.5,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  // Text labels
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _onTabChanged(0),
-                          child: Container(
-                            color: Colors.transparent, // Hit test
-                            child: Center(
-                              child: Text(
-                                'Kontrola',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: _tabIndex == 0 ? Colors.black : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _onTabChanged(1),
-                          child: Container(
-                            color: Colors.transparent, // Hit test
-                            child: Center(
-                              child: Text(
-                                'Nastavení',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: _tabIndex == 1 ? Colors.black : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-
-          // Main Content
+          _buildAppBar(),
           Expanded(
             child: FadeTransition(
               opacity: _fadeController,
-              child: IndexedStack(
-                index: _tabIndex,
-                children: [
-                  // Tab 0: Control (Reviews)
-                  AdminTabs.buildControlTab(
-                    visitDataList: _visitDataList,
-                    isLoading: _isLoading,
-                    isRefreshing: false,
-                    onVisitTap: (visit) => _openVisitDetails(visit),
-                    onRefresh: () async {
-                      await _loadVisitData();
-                      _showSuccessSnackBar('Data byla aktualizována');
-                    },
-                    searchQuery: _searchQuery,
-                    onSearchChanged: _onSearchChanged,
-                    sortBy: _sortBy,
-                    onSortChanged: _onSortChanged,
-                    sortDesc: _sortDesc,
-                    onSortDirectionChanged: _onSortDirectionChanged,
-                    isBulkMode: _isBulkMode,
-                    selectedVisitIds: _selectedVisitIds,
-                    onToggleVisitSelection: _toggleVisitSelection,
-                    onToggleBulkMode: _toggleBulkMode,
-                    onShowAdminActivityLogs: _showAdminActivityLogs, // Fixed method name reference
-                    onBulkApprove: _bulkApprove,
-                    onBulkReject: _bulkReject,
-                    searchController: _searchController,
-                    onShowRouteDetailsSheet: (visit) => _openVisitDetails(visit),
-                  ),
+              child: _buildCurrentPage(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  // Tab 1: Settings (Form + Place Types + Logic)
-                  AdminTabs.buildFormTab(
-                    formFields: _dynamicFormFields,
-                    isLoading: _isScoringLoading || _isPlaceTypesLoading,
-                    scoringConfig: _scoringConfig,
-                    pointsPerKmController: _pointsPerKmController,
-                    minDistanceKmController: _minDistanceKmController,
-                    requireAtLeastOnePlace: _requireAtLeastOnePlace,
-                    onRequireAtLeastOnePlaceChanged: (val) {
-                      setState(() => _requireAtLeastOnePlace = val ?? true);
-                    },
-                    onPreview: _showFormPreview,
-                    onAddField: _addNewFormField,
-                    onEditField: _editFormField,
-                    onDeleteField: _deleteFormField,
-                    onSaveScoring: _saveScoringConfig,
-                    onSaveForm: _saveDynamicForm,
-                    savingScoring: _savingScoring,
-                    savingForm: _isSavingForm,
-                    
-                    placeTypes: _placeTypes,
-                    isPlaceTypesLoading: _isPlaceTypesLoading,
-                    onEditPlaceType: _showEditPlaceTypeDialog,
-                    onDeletePlaceType: (id) {
-                      final pt = _placeTypes.firstWhere((e) => e.id == id); // Helper to find object for dialog
-                      _showDeletePlaceTypeDialog(pt);
-                    },
-                    onManagePlaceTypes: _showManagePlaceTypesSheet,
-                    onTogglePlaceTypeStatus: (pt, active) => _togglePlaceTypeStatus(pt, active),
-                    
-                    isScoringExpanded: _isScoringExpanded,
-                    isFormFieldsExpanded: _isFormFieldsExpanded,
-                    isPlaceTypesExpanded: _isPlaceTypesExpanded,
-                    onScoringExpandedChanged: (val) => setState(() => _isScoringExpanded = val),
-                    onFormFieldsExpandedChanged: (val) => setState(() => _isFormFieldsExpanded = val),
-                    onPlaceTypesExpandedChanged: (val) => setState(() => _isPlaceTypesExpanded = val),
-                    
-                    onReorderFields: (oldIdx, newIdx) async { // Added async
-                       setState(() {
-                        if (oldIdx < newIdx) newIdx -= 1;
-                        final item = _dynamicFormFields.removeAt(oldIdx);
-                        _dynamicFormFields.insert(newIdx, item);
-                      });
-                      try {
-                        final ids = _dynamicFormFields.map((f) => f.id).toList();
-                        await _formFieldService.reorderFormFields(ids);
-                        _logAdminAction('Form fields reordered');
-                        _markFormChangedAndSuggestSave();
-                      } catch (e) {
-                         _showErrorSnackBar('Chyba při změně pořadí polí: $e');
-                      }
-                    },
-                    onReorderPlaceTypes: (oldIdx, newIdx) async { // Added async
-                       setState(() {
-                        if (oldIdx < newIdx) newIdx -= 1;
-                        final item = _placeTypes.removeAt(oldIdx);
-                        _placeTypes.insert(newIdx, item);
-                      });
-                      try {
-                        final ids = _placeTypes.map((p) => p.id).toList();
-                        final svc = PlaceTypeConfigService();
-                        await svc.reorderPlaceTypes(ids);
-                        _logAdminAction('Place types reordered');
-                        _markPlaceTypesChangedAndSuggestSave();
-                      } catch (e) {
-                        _showErrorSnackBar('Chyba při změně pořadí typů míst: $e');
-                      }
-                    },
+  Widget _buildAppBar() {
+    String title = 'Admin Hub';
+    String subtitle = 'Správa aplikace';
+    bool showBack = false;
+
+    switch (_currentSubPage) {
+      case AdminSubPage.hub:
+        title = 'Admin Hub';
+        subtitle = 'Vyberte sekci ke správě';
+        break;
+      case AdminSubPage.overview:
+        title = 'Přehled systému';
+        subtitle = 'Statistiky a logy';
+        showBack = true;
+        break;
+      case AdminSubPage.review:
+        title = 'Kontrola návštěv';
+        subtitle = 'Schvalování tras';
+        showBack = true;
+        break;
+      case AdminSubPage.settings:
+        title = 'Nastavení';
+        subtitle = 'Formulář a bodování';
+        showBack = true;
+        break;
+      case AdminSubPage.rawData:
+        title = 'Raw Data';
+        subtitle = 'Prohlížení databáze';
+        showBack = true;
+        break;
+    }
+
+    return GlassHeader(
+      title: title,
+      subtitle: subtitle,
+      leading: IconButton(
+        onPressed: () {
+          if (_currentSubPage == AdminSubPage.hub) {
+            Navigator.pop(context);
+          } else {
+            setState(() => _currentSubPage = AdminSubPage.hub);
+          }
+        },
+        icon: Icon(showBack ? Icons.arrow_back : Icons.close, size: 24, color: const Color(0xFF1A1A1A)),
+      ),
+      trailing: _currentSubPage == AdminSubPage.hub ? IconButton(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SystemOverviewPage()),
+          );
+        },
+        icon: const Icon(Icons.info_outline, size: 24, color: Color(0xFF1A1A1A)),
+      ) : null,
+    );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_currentSubPage) {
+      case AdminSubPage.hub:
+        return _buildAdminHub();
+      case AdminSubPage.overview:
+        return const AdminDashboardTab();
+      case AdminSubPage.review:
+        return AdminTabs.buildControlTab(
+          visitDataList: _visitDataList,
+          isLoading: _isLoading,
+          isRefreshing: false,
+          onVisitTap: (visit) => _openVisitDetails(visit),
+          onRefresh: () async {
+            await _loadVisitData();
+            _showSuccessSnackBar('Data byla aktualizována');
+          },
+          searchQuery: _searchQuery,
+          onSearchChanged: _onSearchChanged,
+          sortBy: _sortBy,
+          onSortChanged: _onSortChanged,
+          sortDesc: _sortDesc,
+          onSortDirectionChanged: _onSortDirectionChanged,
+          isBulkMode: _isBulkMode,
+          selectedVisitIds: _selectedVisitIds,
+          onToggleVisitSelection: _toggleVisitSelection,
+          onToggleBulkMode: _toggleBulkMode,
+          onShowAdminActivityLogs: _showAdminActivityLogs,
+          onBulkApprove: _bulkApprove,
+          onBulkReject: _bulkReject,
+          searchController: _searchController,
+          onShowRouteDetailsSheet: (visit) => _openVisitDetails(visit),
+        );
+      case AdminSubPage.settings:
+        return AdminTabs.buildFormTab(
+          formFields: _dynamicFormFields,
+          isLoading: _isScoringLoading || _isPlaceTypesLoading,
+          scoringConfig: _scoringConfig,
+          pointsPerKmController: _pointsPerKmController,
+          minDistanceKmController: _minDistanceKmController,
+          requireAtLeastOnePlace: _requireAtLeastOnePlace,
+          onRequireAtLeastOnePlaceChanged: (val) {
+            setState(() => _requireAtLeastOnePlace = val ?? true);
+          },
+          onPreview: _showFormPreview,
+          onAddField: _addNewFormField,
+          onEditField: _editFormField,
+          onDeleteField: _deleteFormField,
+          onSaveScoring: _saveScoringConfig,
+          onSaveForm: _saveDynamicForm,
+          savingScoring: _savingScoring,
+          savingForm: _isSavingForm,
+          placeTypes: _placeTypes,
+          isPlaceTypesLoading: _isPlaceTypesLoading,
+          onEditPlaceType: _showEditPlaceTypeDialog,
+          onTogglePlaceTypeStatus: (pt, active) => _togglePlaceTypeStatus(pt, active),
+          onDeletePlaceType: (id) {
+            final pt = _placeTypes.firstWhere((e) => e.id == id);
+            _showDeletePlaceTypeDialog(pt);
+          },
+          onManagePlaceTypes: _showManagePlaceTypesSheet,
+          isScoringExpanded: _isScoringExpanded,
+          isFormFieldsExpanded: _isFormFieldsExpanded,
+          isPlaceTypesExpanded: _isPlaceTypesExpanded,
+          onScoringExpandedChanged: (val) => setState(() => _isScoringExpanded = val),
+          onFormFieldsExpandedChanged: (val) => setState(() => _isFormFieldsExpanded = val),
+          onPlaceTypesExpandedChanged: (val) => setState(() => _isPlaceTypesExpanded = val),
+          onReorderFields: (oldIdx, newIdx) async {
+            setState(() {
+              if (oldIdx < newIdx) newIdx -= 1;
+              final item = _dynamicFormFields.removeAt(oldIdx);
+              _dynamicFormFields.insert(newIdx, item);
+            });
+            try {
+              final ids = _dynamicFormFields.map((f) => f.id).toList();
+              await _formFieldService.reorderFormFields(ids);
+              _logAdminAction('Form fields reordered');
+            } catch (e) {
+              _showErrorSnackBar('Chyba při změně pořadí: $e');
+            }
+          },
+          onReorderPlaceTypes: (oldIdx, newIdx) async {
+            setState(() {
+              if (oldIdx < newIdx) newIdx -= 1;
+              final item = _placeTypes.removeAt(oldIdx);
+              _placeTypes.insert(newIdx, item);
+            });
+            try {
+              final ids = _placeTypes.map((p) => p.id).toList();
+              await PlaceTypeConfigService().reorderPlaceTypes(ids);
+              _logAdminAction('Place types reordered');
+            } catch (e) {
+              _showErrorSnackBar('Chyba při změně pořadí: $e');
+            }
+          },
+        );
+      case AdminSubPage.rawData:
+        return const AdminRawDataTab();
+    }
+  }
+
+  Widget _buildAdminHub() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: [
+              _buildHubCard(
+                'Přehled',
+                'Statistiky systému',
+                Icons.dashboard_outlined,
+                const Color(0xFF3B82F6),
+                AdminSubPage.overview,
+              ),
+              _buildHubCard(
+                'Kontrola',
+                'Schvalování tras',
+                Icons.fact_check_outlined,
+                const Color(0xFF10B981),
+                AdminSubPage.review,
+              ),
+              _buildHubCard(
+                'Nastavení',
+                'Formulář a body',
+                Icons.settings_suggest_outlined,
+                const Color(0xFFF59E0B),
+                AdminSubPage.settings,
+              ),
+              _buildHubCard(
+                'Raw Data',
+                'Prohlížení DB',
+                Icons.data_object_outlined,
+                const Color(0xFF8B5CF6),
+                AdminSubPage.rawData,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildActivityQuickView(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHubCard(String title, String subtitle, IconData icon, Color color, AdminSubPage target) {
+    return GestureDetector(
+      onTap: () => setState(() => _currentSubPage = target),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFF3F4F6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 28, color: color),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF111827),
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActivityQuickView() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history_rounded, size: 20, color: Color(0xFF111827)),
+              const SizedBox(width: 10),
+              Text(
+                'POSLEDNÍ AKTIVITA'.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFF111827),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: _showAdminActivityLogs,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'ZOBRAZIT VŠE',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_adminActions.isEmpty)
+             Text(
+              'Žádná nedávná aktivita',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500),
+            )
+          else
+            ..._adminActions.reversed.take(3).map((action) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.bolt_rounded, size: 20, color: Colors.blue[600]),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          action['action'] as String,
+                          style: const TextStyle(
+                            fontSize: 14, 
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Před chvílí', // Could be formatted time
+                          style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ),
+            )),
         ],
       ),
     );

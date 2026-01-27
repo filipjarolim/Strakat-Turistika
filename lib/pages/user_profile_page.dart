@@ -9,9 +9,11 @@ import '../widgets/ui/app_button.dart';
 import '../widgets/ui/app_toast.dart';
 import '../services/logging_service.dart';
 
-import '../services/visit_data_service.dart';
+import '../services/logging_service.dart';
+
+import '../repositories/visit_repository.dart';
 import '../services/auth_service.dart';
-import '../services/mongodb_service.dart';
+import '../services/database/database_service.dart';
 import '../services/cloudinary_service.dart';
 import 'webview_page.dart';
 import 'login_page.dart';
@@ -29,7 +31,7 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
-  final VisitDataService _visitDataService = VisitDataService();
+  final VisitRepository _visitRepository = VisitRepository();
   List<VisitData> _userVisits = [];
   bool _isLoading = true;
 
@@ -47,26 +49,32 @@ class _UserProfilePageState extends State<UserProfilePage> {
     try {
       final currentUser = AuthService.currentUser;
       if (currentUser != null) {
-        final visits = await _visitDataService.getVisitDataByUserId(currentUser.id);
+        final visits = await _visitRepository.getVisitsByUserId(currentUser.id);
         // Sort by visitDate desc then createdAt desc, include all states
         visits.sort((a, b) {
           final ad = a.visitDate ?? a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
           final bd = b.visitDate ?? b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
           return bd.compareTo(ad);
         });
-        setState(() {
-          _userVisits = visits;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _userVisits = visits;
+            _isLoading = false;
+          });
+        }
       } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
       if (mounted) {
         AppToast.showError(context, 'Chyba načítání návštěv: $e');
       }
@@ -900,7 +908,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                              ),
                            );
                            if (confirm == true) {
-                             await _visitDataService.deleteVisitData(visit.id);
+                             await _visitRepository.deleteVisit(visit.id);
                              if (mounted) { Navigator.pop(context); _loadUserVisits(); }
                            }
                          },
@@ -1126,7 +1134,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _updateUserImage(String userId, String imageUrl) async {
-    final users = await MongoDBService.getCollection('User');
+    final users = await DatabaseService().getCollection('users');
     if (users != null) await users.updateOne({'_id': userId}, {'\$set': {'image': imageUrl, 'updatedAt': DateTime.now().toIso8601String()}});
     final u = AuthService.currentUser;
     if (u != null) {
@@ -1138,7 +1146,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _updateUserName(String userId, String name) async {
-    final users = await MongoDBService.getCollection('User');
+    final users = await DatabaseService().getCollection('users');
     if (users != null) await users.updateOne({'_id': userId}, {'\$set': {'name': name, 'updatedAt': DateTime.now().toIso8601String()}});
     final u = AuthService.currentUser;
     if (u != null) {
@@ -1184,9 +1192,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
      try {
        final u = AuthService.currentUser;
        if (u == null) return;
-       final users = await MongoDBService.getCollection('User');
+       final users = await DatabaseService().getCollection('users');
        if (users != null) await users.deleteOne({'_id': u.id});
-       final visits = await MongoDBService.getCollection('VisitData');
+       final visits = await DatabaseService().getCollection('visits');
        if (visits != null) await visits.deleteMany({'userId': u.id});
        await AuthService.signOut();
        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (r) => false);

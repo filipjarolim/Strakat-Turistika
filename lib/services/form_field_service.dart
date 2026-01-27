@@ -1,7 +1,8 @@
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 import 'package:mongo_dart/mongo_dart.dart';
-import 'mongodb_service.dart';
+import 'database/database_service.dart';
 import 'auth_service.dart';
+import '../utils/type_converter.dart';
 
 class FormField {
   final String id; // MongoDB _id (internal)
@@ -91,16 +92,16 @@ class FormField {
       };
 
   static FormField fromMap(Map<String, dynamic> map) => FormField(
-        id: map['_id']?.toString() ?? map['id']?.toString() ?? '',
-        name: map['name']?.toString() ?? map['id']?.toString() ?? '', // Fallback na id pro zpětnou kompatibilitu
+        id: (map['_id'] ?? map['id'] ?? '').toString(),
+        name: (map['name'] ?? map['id'] ?? '').toString(),
         label: map['label']?.toString() ?? '',
         type: map['type']?.toString() ?? 'text',
         required: map['required'] == true,
-        options: List<String>.from(map['options'] ?? []),
+        options: (map['options'] as List?)?.map((e) => e.toString()).toList() ?? [],
         defaultValue: map['defaultValue']?.toString() ?? '',
         placeholder: map['placeholder']?.toString(),
-        order: (map['order'] as num?)?.toInt() ?? 0,
-        active: map['active'] != false, // Default true
+        order: TypeConverter.toIntWithDefault(map['order'], 0),
+        active: map['active'] != false,
         isEditable: map['isEditable'] != false,
         createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
         updatedAt: DateTime.tryParse(map['updatedAt']?.toString() ?? '') ?? DateTime.now(),
@@ -115,40 +116,39 @@ class FormFieldService {
   FormFieldService._internal();
 
   static const String _collection = 'form_fields';
+  final DatabaseService _dbService = DatabaseService();
 
   Future<List<FormField>> getFormFields({bool showInactive = false}) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return [];
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       var query = <String, dynamic>{};
       if (!showInactive) {
-        // Pro ne-admin uživatele zobrazit pouze aktivní pole
         query['active'] = true;
       }
       
       final fields = await collection.find(query).toList();
       
-      // If no fields exist, create default ones
       if (fields.isEmpty) {
         await _createDefaultFormFields();
-        return await getFormFields(showInactive: showInactive); // Recursive call to get the newly created fields
+        final refreshedFields = await collection.find(query).toList();
+        if (refreshedFields.isEmpty) return <FormField>[];
+        
+        refreshedFields.sort((a, b) => TypeConverter.toIntWithDefault(a['order'], 0).compareTo(TypeConverter.toIntWithDefault(b['order'], 0)));
+        return refreshedFields.map((doc) => FormField.fromMap(doc)).toList();
       }
       
-      // Sort by order field
-      fields.sort((a, b) => (a['order'] as int? ?? 0).compareTo(b['order'] as int? ?? 0));
+      fields.sort((a, b) => TypeConverter.toIntWithDefault(a['order'], 0).compareTo(TypeConverter.toIntWithDefault(b['order'], 0)));
       return fields.map((doc) => FormField.fromMap(doc)).toList();
-    } catch (e) {
-      print('❌ Error loading form fields: $e');
-      return [];
-    }
+    }).catchError((e) {
+      print('❌ Error getting form fields: $e');
+      return <FormField>[];
+    });
   }
 
-  Future<void> _createDefaultFormFields() async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return;
 
+  Future<void> _createDefaultFormFields() async {
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final now = DateTime.now();
       final defaultFields = [
         FormField(
@@ -186,46 +186,35 @@ class FormFieldService {
       final fieldsToSave = defaultFields.map((field) => field.toMap()).toList();
       await collection.insertAll(fieldsToSave);
       print('✅ Default form fields created');
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error creating default form fields: $e');
-    }
+    });
   }
 
   Future<bool> saveFormFields(List<FormField> fields) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
-      // Clear existing fields
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       await collection.deleteMany({});
-
-      // Insert new fields
       final currentUser = AuthService.currentUser?.id;
       final now = DateTime.now();
       
       final fieldsToSave = fields.map((field) {
-        return field.copyWith(
-          updatedAt: now,
-          updatedBy: currentUser,
-        ).toMap();
+        return field.copyWith(updatedAt: now, updatedBy: currentUser).toMap();
       }).toList();
 
       if (fieldsToSave.isNotEmpty) {
         await collection.insertAll(fieldsToSave);
       }
-
       return true;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error saving form fields: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> addFormField(FormField field) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final currentUser = AuthService.currentUser?.id;
       final now = DateTime.now();
       
@@ -238,66 +227,51 @@ class FormFieldService {
 
       await collection.insert(fieldToSave.toMap());
       return true;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error adding form field: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> updateFormField(FormField field) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final currentUser = AuthService.currentUser?.id;
       final now = DateTime.now();
       
-      final fieldToUpdate = field.copyWith(
-        updatedAt: now,
-        updatedBy: currentUser,
-      );
-
-      final result = await collection.replaceOne(
-        {'id': field.id},
-        fieldToUpdate.toMap(),
-      );
-
+      final fieldToUpdate = field.copyWith(updatedAt: now, updatedBy: currentUser);
+      final result = await collection.replaceOne({'id': field.id}, fieldToUpdate.toMap());
       return result.isSuccess;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error updating form field: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> deleteFormField(String fieldId) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       final result = await collection.deleteOne({'id': fieldId});
       return result.isSuccess;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error deleting form field: $e');
       return false;
-    }
+    });
   }
 
   Future<bool> reorderFormFields(List<String> fieldIds) async {
-    try {
-      final collection = await MongoDBService.getCollection(_collection);
-      if (collection == null) return false;
-
+    return _dbService.execute((db) async {
+      final collection = db.collection(_collection);
       for (int i = 0; i < fieldIds.length; i++) {
         await collection.updateOne(
           {'id': fieldIds[i]},
           {'\$set': {'order': i}},
         );
       }
-
       return true;
-    } catch (e) {
+    }).catchError((e) {
       print('❌ Error reordering form fields: $e');
       return false;
-    }
+    });
   }
 }

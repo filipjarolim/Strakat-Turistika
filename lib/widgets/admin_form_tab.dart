@@ -61,12 +61,13 @@ class AdminFormTab {
                         onTap: () => onScoringExpandedChanged(!isScoringExpanded),
                         child: Row(
                           children: [
-                            const Text(
-                              'Konfigurace bodování',
+                            Text(
+                              'Konfigurace bodování'.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.grey[800],
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ],
@@ -160,12 +161,13 @@ class AdminFormTab {
                         onTap: () => onFormFieldsExpandedChanged(!isFormFieldsExpanded),
                         child: Row(
                           children: [
-                            const Text(
-                              'Pole formuláře',
+                            Text(
+                              'Pole formuláře'.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.grey[800],
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ],
@@ -291,12 +293,13 @@ class AdminFormTab {
                         onTap: () => onPlaceTypesExpandedChanged(!isPlaceTypesExpanded),
                         child: Row(
                           children: [
-                            const Text(
-                              'Typy míst',
+                            Text(
+                              'Typy míst'.toUpperCase(),
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1A1A),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.grey[800],
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ],
@@ -391,14 +394,15 @@ class AdminFormTab {
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: const Color(0xFF666666)),
+            Icon(icon, size: 14, color: Colors.grey[600]),
             const SizedBox(width: 8),
             Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                                  color: Color(0xFF666666),
+              label.toUpperCase(),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: Colors.grey[600],
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -406,17 +410,25 @@ class AdminFormTab {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFF3F4F6), width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFF3F4F6), width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.blue[400]!, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],

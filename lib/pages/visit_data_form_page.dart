@@ -3,10 +3,11 @@ import 'dart:ui';
 import 'dart:math';
 import 'dart:io';
 import '../models/visit_data.dart';
-import '../services/visit_data_service.dart';
+import '../repositories/visit_repository.dart'; // Updated
 import '../models/tracking_summary.dart';
 import '../services/auth_service.dart';
 import '../services/scoring_config_service.dart';
+import '../services/database/database_service.dart';
 import '../services/form_field_service.dart' hide FormField;
 import '../services/form_field_service.dart' as form_service;
 import '../models/place_type_config.dart';
@@ -35,7 +36,8 @@ class VisitDataFormPage extends StatefulWidget {
 
 class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _dogNameController = TextEditingController(); // Keep for pre-filling
+  final _dogNameController = TextEditingController(); 
+  final VisitRepository _visitRepository = VisitRepository(); // Added repository
   // Scoring config and dynamic place typing
   ScoringConfig? _scoringConfig;
   bool _loadingScoring = true;
@@ -104,17 +106,17 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
         });
       }
     } catch (e) {
-      print('❌ Error loading form fields: $e');
+      print('❌ [VisitDataFormPage] Error loading form fields: $e');
       if (mounted) setState(() => _loadingFormFields = false);
     }
   }
 
   Future<void> _loadPlaceTypeConfigs() async {
     try {
-      print('🔍 Loading place type configs from database...');
+      // print('🔍 Loading place type configs from database...');
       final placeTypeService = PlaceTypeConfigService();
       final configs = await placeTypeService.getPlaceTypeConfigs();
-      print('🔍 Successfully loaded ${configs.length} place type configs');
+      // print('🔍 Successfully loaded ${configs.length} place type configs');
       
       if (mounted) {
         setState(() {
@@ -137,10 +139,10 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
              }
           }
         });
-        print('✅ Place type configs loaded into state: ${configs.length} configs');
+        // print('✅ Place type configs loaded into state: ${configs.length} configs');
       }
     } catch (e) {
-      print('❌ Error loading place type configs: $e');
+      print('❌ [VisitDataFormPage] Error loading place type configs: $e');
       if (mounted) {
         setState(() {
           _placeTypeConfigs = [];
@@ -394,56 +396,64 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
     });
 
     try {
-                  // Upload images first if any are selected
-            List<Map<String, dynamic>>? photos;
-            if (_selectedImages.isNotEmpty) {
-              _showCustomToast('📤 Nahrávám fotografie...', true);
+      // Upload images first if any are selected
+      List<Map<String, dynamic>>? photos;
+      if (_selectedImages.isNotEmpty) {
+        _showCustomToast('📤 Nahrávám fotografie...', true);
 
-              try {
-                final List<String> uploadedUrls = await CloudinaryService.uploadMultipleImages(_selectedImages);
+        try {
+          final List<String> uploadedUrls = await CloudinaryService.uploadMultipleImages(_selectedImages);
 
-                if (uploadedUrls.isNotEmpty) {
-                  photos = uploadedUrls.map((url) => {
-                    'url': url,
-                    'uploadedAt': DateTime.now().toIso8601String(),
-                  }).toList();
+          if (uploadedUrls.isNotEmpty) {
+            photos = uploadedUrls.map((url) => {
+              'url': url,
+              'uploadedAt': DateTime.now().toIso8601String(),
+            }).toList();
 
-                  _showCustomToast('✅ Fotografie úspěšně nahrány!', true);
-                } else {
-                  _showCustomToast('⚠️ Nepodařilo se nahrát fotografie - pokračuji bez nich', false);
-                }
-              } catch (e) {
-                print('❌ Cloudinary upload failed: $e');
-                _showCustomToast('⚠️ Nahrávání fotek selhalo - pokračuji bez nich', false);
-                // Continue without photos - the visit data will be saved without photos
-                
-                // For debugging, you can uncomment this to save local file paths
-                // photos = _selectedImages.map((file) => {
-                //   return {
-                //     'url': 'file://${file.path}',
-                //     'uploadedAt': DateTime.now().toIso8601String(),
-                //   };
-                // }).toList();
-                
-                // Temporary: Save local file paths for testing
-                photos = _selectedImages.map((file) => {
-                  'url': 'file://${file.path}',
-                  'uploadedAt': DateTime.now().toIso8601String(),
-                  'local': true, // Mark as local file
-                }).toList();
-              }
-            }
+            _showCustomToast('✅ Fotografie úspěšně nahrány!', true);
+          } else {
+            _showCustomToast('⚠️ Nepodařilo se nahrát fotografie - pokračuji bez nich', false);
+          }
+        } catch (e) {
+          print('❌ Cloudinary upload failed: $e');
+          _showCustomToast('⚠️ Nahrávání fotek selhalo - pokračuji bez nich', false);
+          // Temporary: Save local file paths for testing
+          photos = _selectedImages.map((file) => {
+            'url': 'file://${file.path}',
+            'uploadedAt': DateTime.now().toIso8601String(),
+            'local': true, // Mark as local file
+          }).toList();
+        }
+      }
 
-      final visitDataService = VisitDataService();
+      // Calculate Points Locally
+      double points = 0.0;
+      if (_scoringConfig != null) {
+        // Distance
+        double distanceKm = widget.trackingSummary.totalDistance / 1000;
+        points += distanceKm * _scoringConfig!.pointsPerKm;
+        
+        // Places
+        for (var place in _places) {
+           final typeConfig = _placeTypeConfigs.firstWhere(
+             (c) => c.name == place.type.name,
+             orElse: () => PlaceTypeConfig(
+               id: 'unknown',
+               name: place.type.name,
+               label: 'Neznámé',
+               icon: Icons.help_outline,
+               points: 0,
+               color: Colors.grey,
+               order: 99,
+               createdAt: DateTime.now(),
+               updatedAt: DateTime.now(),
+             )
+           );
+           points += typeConfig.points;
+        }
+      }
 
-      // Get places from places editor only
-      final placesFromEditor = _places
-          .map((p) => p.nameController.text.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      final combinedPlaces = placesFromEditor.join(', ');
-
-      // Collect dynamic form data - use field.name as key
+      // Collect dynamic form data
       final Map<String, dynamic> dynamicFormData = {};
       for (final field in _dynamicFormFields) {
         final controller = _getControllerForField(field.name);
@@ -452,23 +462,21 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
         }
       }
 
-      // Use default title and description since these are not in dynamic form anymore
       final routeTitle = 'Trasa ${DateTime.now().day}.${DateTime.now().month}.${DateTime.now().year}';
       final routeDescription = 'GPS trasa';
+      final placesFromEditor = _places.map((p) => p.nameController.text.trim()).where((s) => s.isNotEmpty).toList();
+      final combinedPlaces = placesFromEditor.join(', ');
 
       // Convert _PlaceItem to Place objects
       final List<Place> finalPlaces = _places.map((placeItem) {
         final newPhotos = placeItem.photos.asMap().entries.map((entry) {
           final index = entry.key;
           final photo = entry.value;
-          final description = placeItem.descriptions.length > index 
-              ? placeItem.descriptions[index].text 
-              : '';
           
           return PlacePhoto(
             id: '${DateTime.now().millisecondsSinceEpoch}_$index',
             url: photo.path, // For now, use local path
-            description: description.isNotEmpty ? description : null,
+            description: null,
             uploadedAt: DateTime.now(),
             isLocal: true,
           );
@@ -486,7 +494,7 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
         final allPhotos = [...existingPhotos, ...newPhotos];
 
         return Place(
-          id: '${DateTime.now().millisecondsSinceEpoch}_${placeItem.nameController.text}',
+          id: '${DateTime.now().millisecondsSinceEpoch}_${placeItem.nameController.text.hashCode}',
           name: placeItem.nameController.text.trim(),
           type: placeItem.type,
           photos: allPhotos,
@@ -495,59 +503,53 @@ class _VisitDataFormPageState extends State<VisitDataFormPage> with TickerProvid
         );
       }).where((place) => place.name.isNotEmpty).toList();
 
-      bool success = false;
-
+      // Create or Update VisitData
+      VisitData visitToSave;
+      
       if (widget.existingVisit != null) {
-          // Re-calculate everything to ensure consistency (points, etc.)
-          final calculatedVisit = await visitDataService.createVisitDataFromTracking(
-            routeTitle: routeTitle,
-            routeDescription: routeDescription,
-            visitedPlaces: combinedPlaces,
-            trackPoints: widget.trackingSummary.trackPoints,
-            totalDistance: widget.trackingSummary.totalDistance,
-            duration: widget.trackingSummary.duration,
-            dogName: dynamicFormData['dog_name'] ?? null,
-            dogNotAllowed: dynamicFormData['dog_not_allowed'] ?? null,
-            photos: photos,
-            places: finalPlaces,
-            peaksCount: _places.where((p) => p.type == PlaceType.PEAK).length,
-            towersCount: _places.where((p) => p.type == PlaceType.TOWER).length,
-            treesCount: _places.where((p) => p.type == PlaceType.TREE).length,
-            extraData: dynamicFormData,
+          visitToSave = widget.existingVisit!.copyWith(
+             routeTitle: routeTitle,
+             routeDescription: routeDescription,
+             visitedPlaces: combinedPlaces,
+             points: points,
+             places: finalPlaces,
+             dogName: dynamicFormData['dog_name'] ?? _dogNameController.text,
+             dogNotAllowed: dynamicFormData['dog_not_allowed'],
+             extraData: dynamicFormData,
+             photos: photos,
           );
-
-          // Merge with existing ID and metadata
-          final updatedVisit = calculatedVisit.copyWith(
-             id: widget.existingVisit!.id,
-             state: widget.existingVisit!.state, // Preserve state
-             createdAt: widget.existingVisit!.createdAt,
-             userId: widget.existingVisit!.userId,
-             user: widget.existingVisit!.user,
-             seasonId: widget.existingVisit!.seasonId,
-             displayName: widget.existingVisit!.displayName,
-          );
-          
-          success = await visitDataService.updateVisitData(updatedVisit);
       } else {
-          // Create new visit
-          final visitData = await visitDataService.createVisitDataFromTracking(
+          final currentUser = AuthService.currentUser;
+          visitToSave = VisitData(
+            id: '', // Repo will assign ID
+            userId: currentUser?.id,
+            user: currentUser != null ? {'name': currentUser.name, 'email': currentUser.email, 'image': currentUser.image} : null,
+            seasonId: null, 
+            year: DateTime.now().year,
+            visitDate: widget.trackingSummary.startTime,
+            createdAt: DateTime.now(),
+            state: VisitState.PENDING_REVIEW,
+            points: points,
             routeTitle: routeTitle,
             routeDescription: routeDescription,
             visitedPlaces: combinedPlaces,
-            trackPoints: widget.trackingSummary.trackPoints,
-            totalDistance: widget.trackingSummary.totalDistance,
-            duration: widget.trackingSummary.duration,
-            dogName: dynamicFormData['dog_name'] ?? null,
-            dogNotAllowed: dynamicFormData['dog_not_allowed'] ?? null,
-            photos: photos,
-            places: finalPlaces,
-            peaksCount: _places.where((p) => p.type == PlaceType.PEAK).length,
-            towersCount: _places.where((p) => p.type == PlaceType.TOWER).length,
-            treesCount: _places.where((p) => p.type == PlaceType.TREE).length,
+            dogName: dynamicFormData['dog_name'] ?? _dogNameController.text,
+            dogNotAllowed: dynamicFormData['dog_not_allowed'],
             extraData: dynamicFormData,
+            photos: photos,
+            route: {
+              'duration': widget.trackingSummary.duration.inSeconds,
+              'totalDistance': widget.trackingSummary.totalDistance,
+              'averageSpeed': widget.trackingSummary.averageSpeed,
+              'maxSpeed': widget.trackingSummary.maxSpeed,
+              'trackPoints': widget.trackingSummary.trackPoints.map((p) => p.toJson()).toList(),
+            },
+            places: finalPlaces,
+            extraPoints: {},
           );
-          success = await visitDataService.saveVisitData(visitData);
       }
+
+      final success = await _visitRepository.saveVisit(visitToSave);
 
       if (success) {
         if (mounted) {
