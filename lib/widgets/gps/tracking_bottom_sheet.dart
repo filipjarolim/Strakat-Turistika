@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../models/tracking_summary.dart';
 import '../ui/app_button.dart';
-import '../../pages/visit_data_form_page.dart';
+import '../../pages/dynamic_form_page.dart';
 
 class TrackingBottomSheet extends StatelessWidget {
   final ScrollController scrollController;
@@ -50,7 +50,7 @@ class TrackingBottomSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -87,7 +87,7 @@ class TrackingBottomSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Statistiky',
                         style: TextStyle(
                           fontSize: 18,
@@ -134,7 +134,10 @@ class TrackingBottomSheet extends StatelessWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => VisitDataFormPage(trackingSummary: defaultSummary),
+                                        builder: (context) => DynamicFormPage(
+                                          slug: 'gps-tracking',
+                                          trackingSummary: defaultSummary,
+                                        ),
                                       ),
                                     );
                                   },
@@ -144,7 +147,7 @@ class TrackingBottomSheet extends StatelessWidget {
                          ),
                       ),
                       
-                      Text(
+                      const Text(
                         'Nástroje mapy',
                         style: TextStyle(
                           fontSize: 18,
@@ -211,7 +214,7 @@ class TrackingBottomSheet extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Probíhá záznam',
                     style: TextStyle(
                       fontSize: 13,
@@ -226,11 +229,11 @@ class TrackingBottomSheet extends StatelessWidget {
                     children: [
                       Text(
                         _formatDuration(summary?.duration ?? Duration.zero),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                          fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -242,11 +245,11 @@ class TrackingBottomSheet extends StatelessWidget {
                       const SizedBox(width: 12),
                       Text(
                         '${((summary?.totalDistance ?? 0) / 1000).toStringAsFixed(2)} km',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                          fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
@@ -267,7 +270,7 @@ class TrackingBottomSheet extends StatelessWidget {
                    borderRadius: BorderRadius.circular(18),
                    boxShadow: [
                      BoxShadow(
-                       color: (isPaused ? Colors.orange : Colors.red).withValues(alpha: 0.3),
+                       color: (isPaused ? Colors.orange : Colors.red).withOpacity(0.3),
                        blurRadius: 12,
                        offset: const Offset(0, 4),
                      ),
@@ -337,7 +340,7 @@ class TrackingBottomSheet extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,
@@ -352,7 +355,7 @@ class TrackingBottomSheet extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -361,7 +364,7 @@ class TrackingBottomSheet extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 unit,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textSecondary,

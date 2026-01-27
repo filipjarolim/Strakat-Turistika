@@ -17,7 +17,7 @@ import '../services/database/database_service.dart';
 import '../services/cloudinary_service.dart';
 import 'webview_page.dart';
 import 'login_page.dart';
-import 'visit_data_form_page.dart';
+import 'dynamic_form_page.dart';
 import '../services/vector_tile_provider.dart';
 import '../services/mapy_cz_download_service.dart';
 import 'package:latlong2/latlong.dart';
@@ -926,7 +926,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                        child: ElevatedButton(
                          onPressed: () {
                            Navigator.pop(context);
-                           Navigator.of(context).push(MaterialPageRoute(builder: (_) => VisitDataFormPage(trackingSummary: TrackingSummary(
+                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => DynamicFormPage(
+                              slug: 'gps-tracking',
+                              trackingSummary: TrackingSummary(
                                   isTracking: false,
                                   startTime: visit.createdAt ?? DateTime.now(),
                                   duration: Duration(seconds: visit.route?['duration'] ?? 0),

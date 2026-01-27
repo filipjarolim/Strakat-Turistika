@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/visit_data.dart';
-import '../services/form_field_service.dart' as form_service;
-import '../services/scoring_config_service.dart';
-import '../models/place_type_config.dart';
+import '../../models/visit_data.dart';
+import '../../services/form_field_service.dart' as form_service;
+import '../../services/scoring_config_service.dart';
+import '../../models/place_type_config.dart';
 import 'admin_control_tab.dart';
 import 'admin_form_tab.dart';
 

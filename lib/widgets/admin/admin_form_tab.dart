@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../services/form_field_service.dart' as form_service;
-import '../services/scoring_config_service.dart';
-import '../models/place_type_config.dart';
+import '../../services/form_field_service.dart' as form_service;
+import '../../services/scoring_config_service.dart';
+import '../../models/place_type_config.dart';
 import 'admin_widgets.dart';
-import 'ui/glass_ui.dart';
-import 'ui/app_button.dart';
+import '../ui/glass_ui.dart';
+import '../ui/app_button.dart';
 class AdminFormTab {
   static Widget build({
     required List<form_service.FormField> formFields,

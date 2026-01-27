@@ -73,12 +73,10 @@ class AuthService {
       final freshUser = await _findUserByEmail(_currentUser!.email);
       
       if (freshUser != null) {
-        // print('✅ Fresh user loaded from database');
         
         _currentUser = freshUser;
         await _saveSessionToStorage();
         
-        // print('✅ User data refreshed and saved to cache');
         return true;
       }
       
@@ -559,17 +557,14 @@ class AuthService {
       if (sessionData != null) {
         final userData = jsonDecode(sessionData);
         _currentUser = User.fromMap(userData);
-        // print('✅ Session loaded from storage (cached role: ${_currentUser?.role})');
         
         // Always refresh from database to get latest data (including role changes)
         if (_currentUser?.email != null) {
-          // print('🔄 Refreshing user data from database to ensure latest info...');
           final freshUser = await _findUserByEmail(_currentUser!.email);
           if (freshUser != null) {
             _currentUser = freshUser;
             // Update cached session with fresh data
             await _saveSessionToStorage();
-            // print('✅ Session refreshed with latest data from database');
           }
         } else {
           print('ℹ️ Session loaded but email is null');
@@ -590,7 +585,6 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       if (_currentUser != null) {
         await prefs.setString('user_session', jsonEncode(_currentUser!.toMap()));
-        // print('✅ Session saved to storage');
       }
     } catch (e) {
       print('⚠️ Could not save session to storage (this is normal during development): $e');

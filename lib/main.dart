@@ -22,10 +22,10 @@ import 'services/auth_service.dart';
 import 'pages/onboarding/auth_gate.dart';
 import 'pages/login_page.dart';
 import 'pages/settings_page.dart';
-import 'pages/admin_review_page.dart';
+import 'pages/admin/admin_review_page.dart';
 import 'pages/user_profile_page.dart';
 
-import 'pages/visit_data_form_page.dart';
+import 'pages/dynamic_form_page.dart';
 import 'pages/results_page.dart';
 
 import 'models/tracking_summary.dart';
@@ -145,7 +145,7 @@ class MyApp extends StatelessWidget {
             maxAltitude: null,
             trackPoints: [],
           );
-          return VisitDataFormPage(trackingSummary: defaultSummary);
+          return DynamicFormPage(slug: 'gps-tracking', trackingSummary: defaultSummary);
         },
         '/tos': (context) => const WebViewPage(
               title: 'Podmínky použití',

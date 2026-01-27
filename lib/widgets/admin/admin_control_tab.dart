@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../models/visit_data.dart';
-import '../repositories/visit_repository.dart';
+import '../../models/visit_data.dart';
+import '../../repositories/visit_repository.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:io';
-import '../services/logging_service.dart';
+import '../../services/logging_service.dart';
 import 'admin_widgets.dart';
-import '../widgets/ui/glass_ui.dart';
-import '../widgets/ui/app_button.dart';
-import '../widgets/ui/app_toast.dart';
-import '../utils/type_converter.dart';
+import '../../widgets/ui/glass_ui.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/app_toast.dart';
+import '../../utils/type_converter.dart';
 
 class AdminControlTab {
   static Widget build({

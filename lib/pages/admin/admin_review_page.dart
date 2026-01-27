@@ -1,27 +1,27 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../models/visit_data.dart';
-import '../models/place_type_config.dart';
-import '../repositories/visit_repository.dart';
-import '../services/scoring_config_service.dart';
-import '../services/form_field_service.dart' hide FormField;
-import '../services/form_field_service.dart' as form_service;
-import '../services/auth_service.dart';
-import 'admin/system_overview_page.dart';
-import '../widgets/admin_widgets.dart';
-import '../widgets/admin_dialogs.dart';
-import '../widgets/admin_tabs.dart';
-import '../widgets/ui/app_toast.dart';
-import '../widgets/ui/app_button.dart';
-import '../widgets/ui/glass_ui.dart';
-import '../widgets/maps/shared_map_widget.dart';
+import '../../models/visit_data.dart';
+import '../../models/place_type_config.dart';
+import '../../repositories/visit_repository.dart';
+import '../../services/scoring_config_service.dart';
+import '../../services/form_field_service.dart' hide FormField;
+import '../../services/form_field_service.dart' as form_service;
+import '../../services/auth_service.dart';
+import 'system_overview_page.dart';
+import '../../widgets/admin/admin_widgets.dart';
+import '../../widgets/admin/admin_dialogs.dart';
+import '../../widgets/admin/admin_tabs.dart';
+import '../../widgets/ui/app_toast.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/glass_ui.dart';
+import '../../widgets/maps/shared_map_widget.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'admin/admin_dashboard_tab.dart';
-import 'admin/admin_raw_data_tab.dart';
+import 'admin_dashboard_tab.dart';
+import 'admin_raw_data_tab.dart';
 
 enum AdminSubPage { hub, overview, review, settings, rawData }
 
